@@ -1,0 +1,13 @@
+# DFA: string biner berakhiran 01
+states: q0 q1 q2
+alphabet: 0 1
+start: q0
+accept: q2
+
+# transisi: asal simbol -> tujuan
+q0 0 -> q1
+q0 1 -> q0
+q1 0 -> q1
+q1 1 -> q2
+q2 0 -> q1
+q2 1 -> q0

@@ -1,0 +1,40 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+  color: #222;
+  background: #fafafa;
+}
+main { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 700px) { main { grid-template-columns: 1fr; } }
+label { display: block; margin-top: 12px; font-weight: 600; }
+textarea, input, select { width: 100%; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 14px; }
+button { margin-top: 12px; padding: 8px 16px; }
+h2 { margin: 16px 0 6px; font-size: 1.1rem; }
+
+/* Kotak pesan: warna selalu didampingi ikon dan kata, tidak hanya warna. */
+.kotak { border: 1px solid; border-radius: 4px; padding: 8px 12px; margin: 6px 0; background: #fff; }
+.kotak p { margin: 0; }
+.kotak ul { margin: 6px 0 0; padding-left: 20px; }
+.ok { border-color: #1b7f3b; color: #0f5b27; }
+.galat { border-color: #b3261e; color: #8c1d18; }
+.peringatan { border-color: #9a6700; color: #6b4700; }
+.netral { border-color: #ccc; color: #555; }
+
+.status-hasil { font-size: 1.2rem; font-weight: 700; }
+table { border-collapse: collapse; width: 100%; background: #fff; margin-top: 8px; }
+th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; font-family: ui-monospace, monospace; font-size: 14px; }
+th { background: #f0f0f0; }
+
+/* Tanda simbol yang salah di bawah kotak input. */
+#tanda-input { font-family: ui-monospace, monospace; margin-top: 4px; min-height: 1.4em; }
+#tanda-input mark { background: #ffd6d2; color: #8c1d18; font-weight: 700; outline: 2px solid #b3261e; }
+
+/* Simpan / Buka file */
+.aksi-berkas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.aksi-berkas button { margin-top: 0; }
+.aksi-berkas label.sisi { display: inline; margin: 0 0 0 8px; font-weight: 600; }
+.aksi-berkas #nama-berkas { width: auto; flex: 1 1 8em; min-width: 8em; }
+textarea.seret { outline: 3px dashed #1b7f3b; outline-offset: -3px; background: #f1faf3; }
+#info-berkas:empty { display: none; }

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finite Automata Simulator</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Finite Automata Simulator</h1>
+    <p>Tulis DFA dalam format <code>.dfa</code>, lalu uji sebuah string.</p>
+  </header>
+
+  <main>
+    <section>
+      <label for="pilih-contoh">Muat contoh:</label>
+      <select id="pilih-contoh"><option value="">(pilih)</option></select>
+
+      <label for="teks-dfa">Definisi DFA (Q, Σ, δ, q₀, F)</label>
+      <textarea id="teks-dfa" rows="16" spellcheck="false"></textarea>
+
+      <div class="aksi-berkas">
+        <button type="button" id="tombol-buka">Buka…</button>
+        <button type="button" id="tombol-simpan">Simpan</button>
+        <label for="nama-berkas" class="sisi">Nama file</label>
+        <input id="nama-berkas" type="text" value="dfa.dfa" autocomplete="off" spellcheck="false">
+        <input id="pilih-berkas" type="file" accept=".dfa,text/plain" hidden>
+      </div>
+      <div id="info-berkas" role="status" aria-live="polite"></div>
+
+      <label for="input">String input (kosongkan untuk ε)</label>
+      <input id="input" type="text" autocomplete="off" aria-describedby="tanda-input">
+      <div id="tanda-input" aria-live="polite"></div>
+
+      <button id="tombol-jalankan">Jalankan</button>
+    </section>
+
+    <section>
+      <h2>Pemeriksaan DFA</h2>
+      <div id="status-dfa" role="status" aria-live="polite">Belum ada definisi.</div>
+
+      <h2>Hasil</h2>
+      <div id="hasil" aria-live="polite">Belum ada simulasi.</div>
+
+      <!-- Sub tahap 5c: graf transisi digambar di sini -->
+      <div id="diagram"></div>
+    </section>
+  </main>
+
+  <script src="berkas.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

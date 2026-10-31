@@ -1,0 +1,11 @@
+# DFA: string biner dengan jumlah simbol 0 genap (termasuk ε)
+# genap = sejauh ini jumlah 0 genap, ganjil = sejauh ini jumlah 0 ganjil
+states: genap ganjil
+alphabet: 0 1
+start: genap
+accept: genap
+
+genap 0 -> ganjil
+genap 1 -> genap
+ganjil 0 -> genap
+ganjil 1 -> ganjil

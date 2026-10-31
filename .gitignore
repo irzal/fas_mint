@@ -1,0 +1,18 @@
+# Dependensi (saat ini belum ada, tetapi jaga-jaga)
+node_modules/
+
+# Log dan file sementara
+npm-debug.log*
+*.log
+coverage/
+
+# Rahasia dan konfigurasi lokal
+.env
+.env.*
+
+# File sistem operasi dan editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

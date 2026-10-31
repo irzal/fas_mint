@@ -1,0 +1,11 @@
+# SENGAJA SALAH (spesifikasi bagian 6): melanggar V6a.
+# Validator akan melaporkan: δ(q1, 1) belum didefinisikan
+states: q0 q1
+alphabet: 0 1
+start: q0
+accept: q1
+
+q0 0 -> q1
+q0 1 -> q0
+q1 0 -> q1
+# δ(q1, 1) tidak ada

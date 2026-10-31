@@ -1,0 +1,13 @@
+# DFA: string atas {a, b} yang memuat substring ab
+# Begitu ab ditemukan, state 'ketemu' tidak pernah ditinggalkan lagi.
+states: awal sudah_a ketemu
+alphabet: a b
+start: awal
+accept: ketemu
+
+awal a -> sudah_a
+awal b -> awal
+sudah_a a -> sudah_a
+sudah_a b -> ketemu
+ketemu a -> ketemu    # sekali ketemu, tetap diterima
+ketemu b -> ketemu

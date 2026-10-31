@@ -1,0 +1,16 @@
+{
+  "name": "fas",
+  "version": "0.1.0",
+  "description": "Finite Automata Simulator (FAS) untuk belajar DFA",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/web/server.js",
+    "dev": "node --watch src/web/server.js",
+    "cli": "node src/cli.js",
+    "test": "node --test"
+  }
+}
