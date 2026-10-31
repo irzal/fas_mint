@@ -33,6 +33,14 @@ fas/
 Alur data: `public/app.js` -> `POST /api/simulasi` -> `src/fas.js` ->
 parser -> validator -> simulator. CLI memakai `src/fas.js` yang sama.
 
+## Deploy ke hosting (mis. Hostinger Node.js)
+
+Isi **file masuk (entry file)** aplikasi dengan `server.js` di akar proyek, bukan
+`src/web/server.js`. Alasannya: `src/web/server.js` hanya menyalakan server jika
+dijalankan langsung, sedangkan sebagian hosting memuat file masuk lewat `require()`.
+`server.js` di akar selalu menyalakannya, dan port dibaca dari variabel `PORT`
+(bawaan 3000). Tidak ada dependensi, jadi tidak ada langkah build khusus.
+
 ## API
 
 | Method | Path                   | Keterangan                                   |
