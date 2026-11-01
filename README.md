@@ -35,11 +35,22 @@ parser -> validator -> simulator. CLI memakai `src/fas.js` yang sama.
 
 ## Deploy ke hosting (mis. Hostinger Node.js)
 
-Isi **file masuk (entry file)** aplikasi dengan `server.js` di akar proyek, bukan
-`src/web/server.js`. Alasannya: `src/web/server.js` hanya menyalakan server jika
-dijalankan langsung, sedangkan sebagian hosting memuat file masuk lewat `require()`.
-`server.js` di akar selalu menyalakannya, dan port dibaca dari variabel `PORT`
-(bawaan 3000). Tidak ada dependensi, jadi tidak ada langkah build khusus.
+Konfigurasi yang dipakai sekarang:
+
+| Pengaturan | Isi |
+|---|---|
+| File masuk (entry file) | `src/web/server.js` |
+| Skrip start di `package.json` | `node src/web/server.js` (`npm start`) |
+| Build command dan output directory | dikosongkan (tidak ada dependensi dan tidak ada yang dikompilasi) |
+| Versi Node.js | 18 atau lebih baru |
+| Port | dibaca dari variabel `PORT` yang diberikan hosting (bawaan 3000) |
+
+`src/web/server.js` hanya menyalakan server jika dijalankan langsung (`node ...`).
+Jika hosting memuat file masuk lewat `require()`, server bisa tidak menyala dan
+halaman tidak terbuka (misalnya 403). Untuk kasus itu tersedia **`server.js`** di akar
+proyek, yang selalu menyalakan server. Cara memakainya: ubah file masuk di hosting
+menjadi `server.js` dan `start` di `package.json` menjadi `node server.js`, lalu deploy
+ulang. Ini hanya cadangan dan belum dipakai; tesnya ada di `test/server-masuk.test.js`.
 
 ## API
 
