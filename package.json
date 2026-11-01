@@ -8,7 +8,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node src/web/server.js",
+    "start": "node server.js",
     "dev": "node --watch src/web/server.js",
     "cli": "node src/cli.js",
     "test": "node --test"

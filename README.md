@@ -39,7 +39,7 @@ Konfigurasi yang dipakai sekarang:
 
 | Pengaturan | Isi |
 |---|---|
-| File masuk (entry file) | `src/web/server.js` |
+| File masuk (entry file) | `server.js` |
 | Skrip start di `package.json` | `node src/web/server.js` (`npm start`) |
 | Build command dan output directory | dikosongkan (tidak ada dependensi dan tidak ada yang dikompilasi) |
 | Versi Node.js | 18 atau lebih baru |
