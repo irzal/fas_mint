@@ -35,22 +35,24 @@ parser -> validator -> simulator. CLI memakai `src/fas.js` yang sama.
 
 ## Deploy ke hosting (mis. Hostinger Node.js)
 
-Konfigurasi yang dipakai sekarang:
+Konfigurasi yang dipakai sekarang (sudah berjalan di Hostinger):
 
 | Pengaturan | Isi |
 |---|---|
-| File masuk (entry file) | `server.js` |
-| Skrip start di `package.json` | `node src/web/server.js` (`npm start`) |
+| File masuk (entry file) | `server.js` (di akar proyek) |
+| Skrip start di `package.json` | `node server.js` (`npm start`) |
 | Build command dan output directory | dikosongkan (tidak ada dependensi dan tidak ada yang dikompilasi) |
+| Environment variables | dikosongkan (`PORT` diberikan hosting) |
 | Versi Node.js | 18 atau lebih baru |
 | Port | dibaca dari variabel `PORT` yang diberikan hosting (bawaan 3000) |
 
-`src/web/server.js` hanya menyalakan server jika dijalankan langsung (`node ...`).
-Jika hosting memuat file masuk lewat `require()`, server bisa tidak menyala dan
-halaman tidak terbuka (misalnya 403). Untuk kasus itu tersedia **`server.js`** di akar
-proyek, yang selalu menyalakan server. Cara memakainya: ubah file masuk di hosting
-menjadi `server.js` dan `start` di `package.json` menjadi `node server.js`, lalu deploy
-ulang. Ini hanya cadangan dan belum dipakai; tesnya ada di `test/server-masuk.test.js`.
+`server.js` adalah file masuk yang **wajib** dipakai di Hostinger. Hostinger memuat file
+masuk lewat `require()` dan tidak mendukung penjaga `if (require.main === module)` yang
+dipakai `src/web/server.js` (server hanya menyala jika dijalankan langsung). Dengan file
+masuk `src/web/server.js`, log Hostinger menulis "App did not call listen() within 3
+seconds" dan halaman tidak terbuka (403). `server.js` memanggil `listen()` tanpa syarat,
+jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
+`src/web/server.js`. Tesnya ada di `test/server-masuk.test.js`.
 
 ## API
 
