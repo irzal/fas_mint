@@ -149,9 +149,18 @@ function fileStatis(res, urlPath) {
 }
 
 // opsi.folderContoh: folder berisi file .dfa contoh (bawaan: contoh/ di akar proyek).
+// opsi.catatan: fungsi (teks) => void untuk mencatat tiap permintaan (bawaan: tidak
+//   mencatat, supaya keluaran tes tetap bersih). Hanya metode, alamat tanpa query,
+//   kode jawaban, dan lama proses yang dicatat; isi permintaan (teks DFA) tidak pernah.
 function buatServer(opsi = {}) {
   const folderContoh = opsi.folderContoh || FOLDER_CONTOH;
+  const catatan = opsi.catatan || (() => {});
   return http.createServer((req, res) => {
+    const mulai = Date.now();
+    res.on('finish', () => {
+      const alamat = String(req.url).split('?')[0];
+      catatan(`${req.method} ${alamat} -> ${res.statusCode} (${Date.now() - mulai} ms)`);
+    });
     try {
       tangani(req, res, folderContoh);
     } catch (err) {
@@ -167,6 +176,11 @@ function buatServer(opsi = {}) {
 function tangani(req, res, folderContoh) {
   const { pathname } = new URL(req.url, 'http://localhost');
 
+  // Pemeriksaan hidup-tidaknya proses; tidak menyentuh disk maupun API lain.
+  if (req.method === 'GET' && pathname === '/healthz') {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end('ok');
+  }
   if (req.method === 'GET' && pathname === '/api/contoh') return daftarContoh(res, folderContoh);
   if (req.method === 'GET' && pathname.startsWith('/api/contoh/')) {
     // decodeURIComponent melempar URIError untuk kode % yang rusak (mis. %E0).
@@ -188,7 +202,7 @@ function tangani(req, res, folderContoh) {
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
-  buatServer().listen(port, () => {
+  buatServer({ catatan: console.log }).listen(port, () => {
     console.log(`FAS berjalan di http://localhost:${port}`);
   });
 }

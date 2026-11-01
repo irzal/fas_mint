@@ -60,6 +60,7 @@ jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
 |--------|------------------------|----------------------------------------------|
 | GET    | `/api/contoh`          | daftar file di `contoh/`                     |
 | GET    | `/api/contoh/<nama>`   | isi satu file contoh (teks)                  |
+| GET    | `/healthz`             | menjawab `ok` jika proses hidup (untuk diagnosis hosting) |
 | POST   | `/api/simulasi`        | body `{ "dfa": "...", "input": "0101" }`     |
 | POST   | `/api/analisis`        | body `{ "dfa": "..." }`; periksa tanpa simulasi |
 

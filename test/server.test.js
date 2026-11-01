@@ -225,3 +225,30 @@ test('"file" contoh yang sebenarnya folder (x.dfa) dijawab 500, server tetap hid
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('/healthz menjawab 200 "ok" tanpa menyentuh API lain', async () => {
+  const res = await fetch(alamat + '/healthz');
+  assert.equal(res.status, 200);
+  assert.equal(await res.text(), 'ok');
+});
+
+test('catatan permintaan: metode, alamat tanpa query, kode jawaban; isi permintaan tidak dicatat', async () => {
+  const baris = [];
+  const s = buatServer({ catatan: (t) => baris.push(t) });
+  await new Promise((resolve) => s.listen(0, resolve));
+  const dasar = `http://localhost:${s.address().port}`;
+  try {
+    await (await fetch(dasar + '/api/contoh?rahasia=1')).text();
+    await (await fetch(dasar + '/api/analisis', { method: 'POST', body: JSON.stringify({ dfa: 'states: RAHASIA' }) })).text();
+    await (await fetch(dasar + '/tidak-ada')).text();
+    // 'finish' dipicu setelah respons terkirim; beri satu putaran agar ketiganya tercatat.
+    await new Promise((r) => setTimeout(r, 50));
+  } finally {
+    await new Promise((resolve) => s.close(resolve));
+  }
+  assert.equal(baris.length, 3);
+  assert.match(baris[0], /^GET \/api\/contoh -> 200 \(\d+ ms\)$/); // "?rahasia=1" tidak ikut
+  assert.match(baris[1], /^POST \/api\/analisis -> 200 /);
+  assert.match(baris[2], /^GET \/tidak-ada -> 404 /);
+  assert.ok(!baris.join('\n').includes('RAHASIA'), 'isi permintaan tidak boleh tercatat');
+});
