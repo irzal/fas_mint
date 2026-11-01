@@ -2,6 +2,9 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { buatServer } = require('../src/web/server');
 
 let server;
@@ -151,4 +154,74 @@ test('karakter multibyte utuh walau terbelah di batas potongan data', async () =
   });
   assert.equal(data.syntaxError, null);
   assert.deepEqual(data.dfa.states, [nama]);
+});
+
+// ---- ketahanan terhadap folder contoh yang bermasalah (mis. tidak ikut terdeploy) ----
+
+// Menyalakan server terpisah dengan folder contoh tertentu, lalu menjalankan `uji`.
+async function denganServer(folderContoh, uji) {
+  const s = buatServer({ folderContoh });
+  await new Promise((resolve) => s.listen(0, resolve));
+  const dasar = `http://localhost:${s.address().port}`;
+  const diam = console.error;
+  console.error = () => {}; // log kesalahan yang diharapkan tidak perlu ikut tampil di keluaran tes
+  try {
+    await uji(dasar);
+  } finally {
+    console.error = diam;
+    await new Promise((resolve) => s.close(resolve));
+  }
+}
+
+test('folder contoh tidak ada: /api/contoh dijawab 500 dengan pesan jelas, server tetap hidup', async () => {
+  await denganServer('/folder/yang/tidak/ada', async (dasar) => {
+    const res = await fetch(dasar + '/api/contoh');
+    assert.equal(res.status, 500);
+    const data = await res.json();
+    assert.match(data.error, /folder contoh tidak bisa dibaca/);
+    assert.ok(!data.error.includes('/folder/yang'), 'alamat folder server tidak boleh bocor ke pengguna');
+    // Server masih menjawab permintaan lain setelah kesalahan itu.
+    assert.equal((await fetch(dasar + '/')).status, 200);
+    assert.equal((await fetch(dasar + '/api/contoh/x.dfa')).status, 404);
+  });
+});
+
+test('folder contoh kosong: daftar kosong, bukan error', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fas-kosong-'));
+  try {
+    await denganServer(dir, async (dasar) => {
+      const res = await fetch(dasar + '/api/contoh');
+      assert.equal(res.status, 200);
+      assert.deepEqual(await res.json(), { contoh: [] });
+    });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('daftar contoh hanya berisi .dfa dan berurutan menurut abjad', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fas-urut-'));
+  try {
+    for (const n of ['c.dfa', 'a.dfa', 'b.txt', 'B.dfa']) fs.writeFileSync(path.join(dir, n), 'x');
+    await denganServer(dir, async (dasar) => {
+      assert.deepEqual((await (await fetch(dasar + '/api/contoh')).json()).contoh, ['B.dfa', 'a.dfa', 'c.dfa']);
+    });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('"file" contoh yang sebenarnya folder (x.dfa) dijawab 500, server tetap hidup', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fas-dir-'));
+  try {
+    fs.mkdirSync(path.join(dir, 'x.dfa'));
+    await denganServer(dir, async (dasar) => {
+      const res = await fetch(dasar + '/api/contoh/x.dfa');
+      assert.equal(res.status, 500);
+      assert.match((await res.json()).error, /tidak bisa dibaca/);
+      assert.equal((await fetch(dasar + '/')).status, 200);
+    });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

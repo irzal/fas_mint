@@ -219,13 +219,23 @@ teksDfa.addEventListener('drop', (e) => {
 
 // ---------- contoh dan pemasangan ----------
 
+// Jika daftar contoh gagal dimuat, beri tahu pengguna (bukan diam-diam kosong) dan
+// sebutkan penyebabnya, supaya masalah di server mudah dilacak.
 async function muatDaftarContoh() {
-  const res = await fetch('/api/contoh');
-  const data = await res.json();
-  for (const nama of data.contoh) {
-    const opsi = el('option', nama);
-    opsi.value = nama;
-    pilihContoh.appendChild(opsi);
+  try {
+    const res = await fetch('/api/contoh');
+    if (!res.ok) throw new Error(`server menjawab ${res.status}`);
+    const data = await res.json();
+    if (data.contoh.length === 0) {
+      return infoBerkasGalat('Daftar contoh kosong: tidak ada file .dfa di folder contoh server.');
+    }
+    for (const nama of data.contoh) {
+      const opsi = el('option', nama);
+      opsi.value = nama;
+      pilihContoh.appendChild(opsi);
+    }
+  } catch (err) {
+    infoBerkasGalat(`Daftar contoh tidak bisa dimuat (${err.message}).`);
   }
 }
 

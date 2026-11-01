@@ -52,20 +52,36 @@ function bacaBody(req) {
 }
 
 // GET /api/contoh  -> daftar nama file .dfa di folder contoh/
-function daftarContoh(res) {
-  const nama = fs.readdirSync(FOLDER_CONTOH).filter((f) => f.endsWith('.dfa'));
+// Jika folder tidak bisa dibaca (mis. tidak ikut terdeploy), jawab 500 dengan pesan
+// yang jelas, bukan membiarkan error itu menghentikan server. Alamat folder di server
+// hanya ditulis ke log, tidak dikirim ke pengguna.
+function daftarContoh(res, folder) {
+  let nama;
+  try {
+    nama = fs.readdirSync(folder).filter((f) => f.endsWith('.dfa')).sort();
+  } catch (err) {
+    console.error(`gagal membaca folder contoh (${folder}): ${err.message}`);
+    return kirimJson(res, 500, { error: 'folder contoh tidak bisa dibaca di server' });
+  }
   kirimJson(res, 200, { contoh: nama });
 }
 
 // GET /api/contoh/<nama>.dfa  -> isi file contoh sebagai teks
-function ambilContoh(res, nama) {
+function ambilContoh(res, nama, folder) {
   // path.basename mencegah akses ke luar folder contoh/ (misalnya "../")
-  const file = path.join(FOLDER_CONTOH, path.basename(nama));
-  if (!file.endsWith('.dfa') || !fs.existsSync(file)) {
-    return kirimJson(res, 404, { error: 'contoh tidak ditemukan' });
+  const file = path.join(folder, path.basename(nama));
+  let isi;
+  try {
+    if (!file.endsWith('.dfa') || !fs.existsSync(file)) throw Object.assign(new Error('tidak ada'), { code: 'ENOENT' });
+    isi = fs.readFileSync(file, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') console.error(`gagal membaca contoh (${file}): ${err.message}`);
+    return kirimJson(res, err.code === 'ENOENT' ? 404 : 500, {
+      error: err.code === 'ENOENT' ? 'contoh tidak ditemukan' : 'contoh tidak bisa dibaca di server',
+    });
   }
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end(fs.readFileSync(file, 'utf8'));
+  res.end(isi);
 }
 
 // Membaca body JSON dan memastikan field yang diminta berupa teks.
@@ -132,28 +148,42 @@ function fileStatis(res, urlPath) {
   res.end(fs.readFileSync(file));
 }
 
-function buatServer() {
+// opsi.folderContoh: folder berisi file .dfa contoh (bawaan: contoh/ di akar proyek).
+function buatServer(opsi = {}) {
+  const folderContoh = opsi.folderContoh || FOLDER_CONTOH;
   return http.createServer((req, res) => {
-    const { pathname } = new URL(req.url, 'http://localhost');
-
-    if (req.method === 'GET' && pathname === '/api/contoh') return daftarContoh(res);
-    if (req.method === 'GET' && pathname.startsWith('/api/contoh/')) {
-      // decodeURIComponent melempar URIError untuk kode % yang rusak (mis. %E0).
-      // Tanpa try/catch, error itu tidak tertangkap dan seluruh server berhenti.
-      let nama;
-      try {
-        nama = decodeURIComponent(pathname.slice('/api/contoh/'.length));
-      } catch {
-        return kirimJson(res, 400, { error: 'nama contoh tidak valid' });
-      }
-      return ambilContoh(res, nama);
+    try {
+      tangani(req, res, folderContoh);
+    } catch (err) {
+      // Pengaman terakhir: kesalahan tak terduga di satu permintaan tidak boleh
+      // menghentikan seluruh server.
+      console.error(`kesalahan pada ${req.method} ${req.url}: ${err.stack || err.message}`);
+      if (!res.headersSent) kirimJson(res, 500, { error: 'kesalahan di server' });
+      else res.end();
     }
-    if (req.method === 'POST' && pathname === '/api/simulasi') return simulasi(req, res);
-    if (req.method === 'POST' && pathname === '/api/analisis') return analisisDfa(req, res);
-    if (req.method === 'GET') return fileStatis(res, pathname);
-
-    kirimJson(res, 405, { error: 'method tidak didukung' });
   });
+}
+
+function tangani(req, res, folderContoh) {
+  const { pathname } = new URL(req.url, 'http://localhost');
+
+  if (req.method === 'GET' && pathname === '/api/contoh') return daftarContoh(res, folderContoh);
+  if (req.method === 'GET' && pathname.startsWith('/api/contoh/')) {
+    // decodeURIComponent melempar URIError untuk kode % yang rusak (mis. %E0).
+    // Tanpa try/catch, error itu tidak tertangkap dan seluruh server berhenti.
+    let nama;
+    try {
+      nama = decodeURIComponent(pathname.slice('/api/contoh/'.length));
+    } catch {
+      return kirimJson(res, 400, { error: 'nama contoh tidak valid' });
+    }
+    return ambilContoh(res, nama, folderContoh);
+  }
+  if (req.method === 'POST' && pathname === '/api/simulasi') return simulasi(req, res);
+  if (req.method === 'POST' && pathname === '/api/analisis') return analisisDfa(req, res);
+  if (req.method === 'GET') return fileStatis(res, pathname);
+
+  kirimJson(res, 405, { error: 'method tidak didukung' });
 }
 
 if (require.main === module) {
