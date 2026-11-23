@@ -27,11 +27,19 @@ fas/
 │   ├── cli.js           antarmuka baris perintah
 │   └── web/server.js    tahap 5: server http bawaan Node + API JSON
 ├── public/              halaman web (HTML, CSS, JS polos)
+│   ├── graf.js          model graf (node, sisi) dan tata letak; tanpa DOM
+│   ├── gambar.js        penggambar diagram state (geometri + elemen SVG)
+│   ├── berkas.js        pembantu simpan/buka file .dfa
+│   └── app.js           penghubung halaman dengan API
 └── test/                tes per modul
 ```
 
 Alur data: `public/app.js` -> `POST /api/simulasi` -> `src/fas.js` ->
 parser -> validator -> simulator. CLI memakai `src/fas.js` yang sama.
+
+Diagram state: `POST /api/analisis` (saat mengetik) memberi `dfa` ->
+`Graf.buatGraf` -> `Graf.hitungTataLetak` -> `Gambar.susunGambar` ->
+`Gambar.buatSvg`. Semuanya berjalan di browser, kecuali parse di server.
 
 ## Deploy ke hosting (mis. Hostinger Node.js)
 
@@ -88,7 +96,7 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
 |---|---|---|
 | 5a | Tampilan hasil, jejak, peringatan, pemeriksaan langsung saat mengetik | selesai (dicoba di Chromium) |
 | 5b | Model graf (node, sisi digabung) dan tata letak berlapis/melingkar, `public/graf.js` | selesai |
-| 5c | Gambar graf SVG, menu pilihan tata letak | belum |
+| 5c | Gambar graf SVG, menu pilihan tata letak, `public/gambar.js` | selesai (dicoba di Chromium) |
 | 5d | Animasi jejak di atas graf | belum |
 | 5e | Penyelesaian: layar kecil, aksesibilitas, README | belum |
 | 5f | Menggeser node (posisi hanya selama halaman terbuka) | belum |
@@ -100,4 +108,6 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
 
 - Sudah jalan: `parseDfa`, `validateDfa`, `simulate`, server web, API, dan
   CLI (dengan jejak langkah), semuanya dengan tes.
-- Belum: tampilan graf dan animasinya di web.
+- Sudah jalan di web: diagram state (SVG) yang diperbarui saat mengetik,
+  dengan pilihan tata letak berlapis atau melingkar.
+- Belum: animasi jejak di atas graf (5d), menggeser node (5f), penyelesaian (5e).

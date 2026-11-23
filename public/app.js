@@ -11,6 +11,8 @@ const hasil = document.getElementById('hasil');
 const namaBerkas = document.getElementById('nama-berkas');
 const pilihBerkas = document.getElementById('pilih-berkas');
 const infoBerkas = document.getElementById('info-berkas');
+const pilihTataLetak = document.getElementById('pilih-tata-letak');
+const diagram = document.getElementById('diagram');
 
 // ---------- pembantu DOM ----------
 
@@ -56,6 +58,9 @@ let nomorPermintaan = 0; // jawaban yang datang terlambat dari ketikan lama diab
 async function periksa() {
   const saya = ++nomorPermintaan;
   if (teksDfa.value.trim() === '') {
+    dfaTerakhir = null;
+    analisisTerakhir = null;
+    gambarDiagram();
     return ganti(statusDfa, kotak('netral', 'ℹ', 'Belum ada definisi.'));
   }
   try {
@@ -68,12 +73,59 @@ async function periksa() {
     if (saya !== nomorPermintaan) return;
     if (data.error) return ganti(statusDfa, kotak('galat', '✖', 'Error:', [data.error]));
     tampilkanAnalisis(data);
+    perbaruiDiagram(data);
   } catch {
     if (saya === nomorPermintaan) {
       ganti(statusDfa, kotak('galat', '✖', 'Tidak bisa menghubungi server.'));
     }
   }
 }
+
+// ---------- diagram state ----------
+
+// DFA terakhir yang berhasil dibaca (hasil parse dari server). Dipakai lagi saat
+// tata letak diganti, tanpa bertanya ke server.
+let dfaTerakhir = null;
+
+function gambarDiagram() {
+  diagram.classList.remove('usang');
+  if (!dfaTerakhir) return ganti(diagram, el('p', 'Diagram muncul setelah definisi DFA bisa dibaca.', 'keterangan'));
+  if (dfaTerakhir.states.length === 0) return ganti(diagram, el('p', 'Belum ada state untuk digambar.', 'keterangan'));
+  const graf = Graf.buatGraf(dfaTerakhir);
+  const gambar = Gambar.susunGambar(graf, Graf.hitungTataLetak(graf, pilihTataLetak.value));
+  const judul = `Diagram state: ${graf.nodes.length} state, ${graf.edges.length} panah transisi`;
+  ganti(diagram, Gambar.buatSvg(gambar, judul));
+}
+
+// Dipanggil dengan hasil /api/analisis (atau hasil terakhir, saat tata letak diganti).
+let analisisTerakhir = null;
+function perbaruiDiagram(a) {
+  analisisTerakhir = a;
+  if (a.dfa) {
+    dfaTerakhir = a.dfa;
+    gambarDiagram();
+    if (a.errors.length > 0) {
+      diagram.appendChild(kotak('peringatan', '⚠', 'DFA belum valid, jadi diagram ini bisa belum lengkap.'));
+    }
+    return;
+  }
+  // Sintaks salah (biasanya karena sedang mengetik): diagram terakhir dibiarkan,
+  // tetapi dipudarkan dan diberi catatan supaya tidak dikira gambar terbaru.
+  if (!dfaTerakhir) return gambarDiagram();
+  gambarDiagram();
+  diagram.classList.add('usang');
+  diagram.appendChild(kotak('netral', 'ℹ', 'Sintaks belum benar. Diagram di atas dari definisi terakhir yang terbaca.'));
+}
+
+for (const t of Graf.DAFTAR_TATA_LETAK) {
+  const opsi = el('option', t.label);
+  opsi.value = t.nama;
+  pilihTataLetak.appendChild(opsi);
+}
+pilihTataLetak.addEventListener('change', () => {
+  if (analisisTerakhir) perbaruiDiagram(analisisTerakhir);
+  else gambarDiagram();
+});
 
 let timerPeriksa;
 function jadwalkanPeriksa() {

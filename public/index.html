@@ -44,11 +44,19 @@
       <h2>Hasil</h2>
       <div id="hasil" aria-live="polite">Belum ada simulasi.</div>
 
-      <!-- Sub tahap 5c: graf transisi digambar di sini -->
+      <h2>Diagram state</h2>
+      <label for="pilih-tata-letak">Tata letak</label>
+      <select id="pilih-tata-letak"></select>
       <div id="diagram"></div>
+      <p class="keterangan">
+        Panah dari luar menunjuk state awal q₀. Lingkaran ganda adalah state akhir (anggota F).
+        Garis putus-putus menandai state yang tidak terjangkau dari q₀.
+      </p>
     </section>
   </main>
 
+  <script src="graf.js"></script>
+  <script src="gambar.js"></script>
   <script src="berkas.js"></script>
   <script src="app.js"></script>
 </body>

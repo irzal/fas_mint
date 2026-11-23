@@ -199,6 +199,8 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Notasi diagram state (sub tahap 5c): q₀ ditunjuk panah dari kiri; state akhir = lingkaran ganda; δ(p, a) = p = loop; simbol dengan asal dan tujuan sama digabung dalam satu panah berlabel `a, b`; p -> q dan q -> p melengkung ke sisi berlawanan; panah yang akan menembus state lain dibuat melengkung; state tak terjangkau digambar putus-putus | Sama dengan notasi buku teks; tanda tak terjangkau sejalan dengan peringatan W1 |
+| 2026-11-23 | Saat sintaks `.dfa` salah, diagram terakhir tetap tampil tetapi dipudarkan dan diberi catatan; saat DFA belum valid, diagram tetap digambar dengan peringatan "bisa belum lengkap" | Diagram tidak hilang-muncul selama mengetik, tetapi tidak dikira gambar terbaru |
 | 2026-10-08 | Tata letak graf berupa fungsi yang bisa diganti (berlapis, melingkar), dipilih lewat menu di halaman; bawaan berlapis | Tata letak terpisah dari model graf, mudah ditambah tanpa mengubah penggambar |
 | 2026-10-08 | Menggeser node di graf: posisi hanya berlaku selama halaman terbuka (sub tahap 5f) | Paling sederhana; teks `.dfa` tetap sumber utama |
 | 2026-10-08 | Konfigurasi gambar graf kelak di file terpisah, bukan di dalam `.dfa` | Menjaga `.dfa` murni 5-tuple (lihat bagian 8) |

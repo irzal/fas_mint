@@ -4,7 +4,7 @@
 // Tiga lapisan yang sengaja dipisah:
 //   1. buatGraf(dfa)               -> node dan sisi (tanpa posisi)
 //   2. hitungTataLetak(graf, nama) -> posisi tiap node, dari fungsi di TATA_LETAK
-//   3. penggambar (sub tahap 5c)   -> SVG dari graf + posisi
+//   3. penggambar (gambar.js)      -> SVG dari graf + posisi
 // Menambah tata letak baru cukup menulis satu fungsi dan mendaftarkannya di
 // TATA_LETAK; lapisan lain tidak perlu diubah.
 

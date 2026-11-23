@@ -38,3 +38,18 @@ th { background: #f0f0f0; }
 .aksi-berkas #nama-berkas { width: auto; flex: 1 1 8em; min-width: 8em; }
 textarea.seret { outline: 3px dashed #1b7f3b; outline-offset: -3px; background: #f1faf3; }
 #info-berkas:empty { display: none; }
+
+/* Diagram state (sub tahap 5c). Warna selalu didampingi bentuk:
+   lingkaran ganda = state akhir, garis putus-putus = tak terjangkau. */
+#diagram { margin-top: 8px; overflow-x: auto; }
+#diagram svg.graf { display: block; max-width: 100%; height: auto; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
+#diagram.usang svg.graf { opacity: 0.45; }
+.graf text { font-family: ui-monospace, monospace; font-size: 14px; text-anchor: middle; dominant-baseline: central; fill: #222; }
+.graf .state circle { fill: #fff; stroke: #222; stroke-width: 1.5; }
+.graf .state.akhir circle + circle { fill: none; }
+.graf .state.tak-terjangkau circle { stroke: #777; stroke-dasharray: 5 3; }
+.graf .state.tak-terjangkau text { fill: #666; }
+.graf .panah { fill: none; stroke: #345678; stroke-width: 1.5; }
+.graf .kepala-panah { fill: #345678; }
+.graf .label-panah { fill: #1d3550; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.keterangan { font-size: 0.9rem; color: #555; margin: 6px 0 0; }
