@@ -500,12 +500,12 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
 
 ## 11. Rencana perluasan lain (belum dikerjakan)
 
-- Posisi node untuk visualisasi web, misalnya `layout: q0 100 80`.
 - Konfigurasi gambar graf transisi (tata letak bawaan, posisi node, tampilan)
   di file terpisah, mirip CSS terhadap HTML, sehingga file `.dfa`/`.fa` tetap
-  hanya berisi 5-tuple. Bentuk dan nama file belum diputuskan. Posisi hasil
-  geser node (sub tahap 5f) akan memakai lapisan data yang sama sehingga
-  nanti bisa disimpan ke file itu.
+  hanya berisi 5-tuple. Posisi node TIDAK ditulis di dalam file automata
+  (keputusan 2026-10-08). Bentuk dan nama file konfigurasi belum diputuskan.
+  Posisi hasil geser node (sub tahap 5f) sudah disimpan sebagai lapisan data
+  tersendiri (`Graf.terapkanGeser`), sehingga nanti bisa disimpan ke file itu.
 
 ### Gagasan jangka panjang (belum diputuskan)
 
@@ -513,10 +513,11 @@ Dua gagasan di bawah ini dicatat agar tidak hilang. Keduanya belum diputuskan
 dan belum dijadwalkan.
 
 **A. Editor diagram transisi grafis di web.** Mahasiswa menggambar state dan
-transisi langsung di diagram, lalu halaman menghasilkan teks `.dfa` yang setara.
-Teks `.dfa` tetap satu-satunya format simpan: diagram hanyalah cara lain untuk
-menulis 5-tuple yang sama. Posisi node mengikuti keputusan yang sudah ada,
-yaitu disimpan di file konfigurasi gambar yang terpisah, bukan di dalam `.dfa`.
+transisi langsung di diagram (DFA maupun NFA), lalu halaman menghasilkan teks
+`.fa` yang setara. Teks automata tetap satu-satunya format simpan: diagram
+hanyalah cara lain untuk menulis 5-tuple yang sama. Posisi node mengikuti
+keputusan yang sudah ada, yaitu disimpan di file konfigurasi gambar yang
+terpisah, bukan di dalam file `.fa`/`.dfa`.
 
 **B. Tutor AI untuk mahasiswa (DFA, NFA, regex).** Perannya pemberi saran
 jika automata buatan mahasiswa tidak sesuai soal, baik secara struktur
@@ -529,9 +530,10 @@ tandingan). Kemampuan yang diharapkan:
 - memeriksa konversi regex ke NFA dan sebaliknya;
 - membimbing latihan pumping lemma.
 
-Catatan: kemampuan ini memerlukan modul baru di luar lingkup tahap 1-5, antara
-lain NFA dan regex, uji ekuivalensi bahasa dua automata, minimalisasi, dan
-konversi. Untuk pumping lemma, Tutor AI lebih cocok sebagai pembimbing langkah
+Catatan: NFA (dengan ε) dan konversi NFA <-> DFA sudah ada sejak tahap 6.
+Kemampuan ini masih memerlukan modul baru, antara lain regex (dan konversi
+regex <-> NFA), uji ekuivalensi bahasa dua automata, dan minimalisasi DFA.
+Untuk pumping lemma, Tutor AI lebih cocok sebagai pembimbing langkah
 (memilih string, membagi xyz, memeriksa tiap kasus) daripada pembuktian
 otomatis, karena pembuktian umumnya tidak bisa diotomatiskan.
 
@@ -547,6 +549,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Merapikan bagian 11: butir "posisi node di dalam file (`layout: ...`)" dihapus karena bertentangan dengan keputusan 2026-10-08 (konfigurasi gambar di file terpisah); gagasan A dan B disesuaikan dengan keadaan sesudah tahap 6 (format `.fa`; NFA dan konversi sudah ada) | Spesifikasi tidak memuat rencana yang saling bertentangan atau sudah usang |
 | 2026-11-23 | Penyelesaian tahap 6 (sub tahap 6k): konfirmasi sebelum mengganti dokumen yang berubah; lingkaran state membesar sampai ±13 huruf dengan jarak antar state ikut diperbesar, nama lebih panjang memakai huruf lebih kecil (min 9 px); hasil simulasi/konversi diumumkan sebagai ringkasan untuk pembaca layar | Pekerjaan mahasiswa tidak hilang tanpa sengaja; nama hasil konversi terbaca; tabel panjang tidak dibacakan seluruhnya |
 | 2026-11-23 | Hasil konversi di halaman web dibuka sebagai dokumen baru di tab browser baru; tabel konversi tetap di tab asal | Automata asal tidak hilang dan bisa dibandingkan dengan hasilnya |
 | 2026-11-23 | Animasi jejak NFA (bagian 10): sorot seluruh himpunan aktif dan semua panah δ/ε langkah itu; di akhir, state akhir di himpunan hijau jika DITERIMA, semua merah jika DITOLAK; tabel dengan baris 0 dan kolom ε-closure hanya jika ada ε-transisi | Mahasiswa melihat semua cabang NFA sekaligus; hasil akhir jelas walau himpunannya berisi banyak state |
