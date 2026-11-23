@@ -95,6 +95,7 @@ function gambarDiagram() {
   const gambar = Gambar.susunGambar(graf, Graf.hitungTataLetak(graf, pilihTataLetak.value));
   const judul = `Diagram state: ${graf.nodes.length} state, ${graf.edges.length} panah transisi`;
   ganti(diagram, Gambar.buatSvg(gambar, judul));
+  tampilkanJejak();
 }
 
 // Dipanggil dengan hasil /api/analisis (atau hasil terakhir, saat tata letak diganti).
@@ -127,6 +128,95 @@ pilihTataLetak.addEventListener('change', () => {
   else gambarDiagram();
 });
 
+// ---------- animasi jejak (sub tahap 5d) ----------
+
+const kendaliJejak = document.getElementById('kendali-jejak');
+const pitaInput = document.getElementById('pita-input');
+const teksJejak = document.getElementById('teks-jejak');
+const tombolAwal = document.getElementById('jejak-awal');
+const tombolMundur = document.getElementById('jejak-mundur');
+const tombolPutar = document.getElementById('jejak-putar');
+const tombolMaju = document.getElementById('jejak-maju');
+
+const JEDA_LANGKAH = 1000; // milidetik per langkah saat diputar
+// Jika pengguna meminta gerak dikurangi (pengaturan sistem), animasi tidak
+// diputar otomatis; langkah tetap bisa dijalankan dengan tombol.
+const kurangiGerak = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Jejak simulasi terakhir: { start, hasil, posisi }. null = tidak ada.
+let jejak = null;
+let timerJejak = null;
+
+// Pita input: simbol yang sudah dibaca, simbol yang baru dibaca, dan sisanya.
+function gambarPita(steps, posisi) {
+  if (steps.length === 0) return ganti(pitaInput, el('span', 'ε', 'simbol'));
+  ganti(pitaInput, ...steps.map((s, i) => {
+    let kelas = 'simbol';
+    if (i + 1 < posisi) kelas += ' dibaca';
+    if (i + 1 === posisi) kelas += ' sekarang';
+    return el('span', s.symbol, kelas);
+  }));
+}
+
+// Pasang keadaan posisi sekarang ke semua tampilan: diagram, pita, teks, tabel, tombol.
+function tampilkanJejak() {
+  const svg = diagram.querySelector('svg');
+  if (!jejak) {
+    Animasi.sorotDiagram(svg, null);
+    return;
+  }
+  const k = Animasi.keadaanJejak(jejak.start, jejak.hasil, jejak.posisi);
+  kendaliJejak.hidden = false;
+  Animasi.sorotDiagram(svg, k);
+  gambarPita(jejak.hasil.steps, k.posisi);
+  teksJejak.textContent = k.teks;
+  for (const baris of hasil.querySelectorAll('tr[data-langkah]')) {
+    baris.classList.toggle('aktif', Number(baris.dataset.langkah) === k.posisi);
+  }
+  tombolAwal.disabled = k.posisi === 0;
+  tombolMundur.disabled = k.posisi === 0;
+  tombolMaju.disabled = k.selesai;
+  tombolPutar.textContent = timerJejak ? '⏸ Jeda' : '▶ Putar';
+}
+
+function keJejak(posisi) {
+  if (!jejak) return;
+  jejak.posisi = Math.max(0, Math.min(jejak.hasil.steps.length, posisi));
+  tampilkanJejak();
+}
+
+function jedaJejak() {
+  clearInterval(timerJejak);
+  timerJejak = null;
+  if (jejak) tampilkanJejak();
+}
+
+function putarJejak() {
+  if (!jejak) return;
+  if (jejak.hasil.steps.length === 0) return tampilkanJejak(); // input ε: tidak ada yang diputar
+  if (jejak.posisi === jejak.hasil.steps.length) jejak.posisi = 0; // sudah di akhir: ulang dari awal
+  clearInterval(timerJejak);
+  timerJejak = setInterval(() => {
+    keJejak(jejak.posisi + 1);
+    if (jejak.posisi === jejak.hasil.steps.length) jedaJejak();
+  }, JEDA_LANGKAH);
+  tampilkanJejak();
+}
+
+// Dipanggil saat definisi/input berubah atau simulasi baru dimulai.
+function hentikanJejak() {
+  clearInterval(timerJejak);
+  timerJejak = null;
+  jejak = null;
+  kendaliJejak.hidden = true;
+  Animasi.sorotDiagram(diagram.querySelector('svg'), null);
+}
+
+tombolAwal.addEventListener('click', () => { jedaJejak(); keJejak(0); });
+tombolMundur.addEventListener('click', () => { jedaJejak(); keJejak(jejak.posisi - 1); });
+tombolMaju.addEventListener('click', () => { jedaJejak(); keJejak(jejak.posisi + 1); });
+tombolPutar.addEventListener('click', () => (timerJejak ? jedaJejak() : putarJejak()));
+
 let timerPeriksa;
 function jadwalkanPeriksa() {
   clearTimeout(timerPeriksa);
@@ -141,6 +231,7 @@ let hasilBerlaku = false;
 
 function hasilKedaluwarsa() {
   ganti(tandaInput);
+  hentikanJejak();
   if (!hasilBerlaku) return;
   hasilBerlaku = false;
   ganti(hasil, kotak('netral', 'ℹ', 'Definisi atau input berubah. Tekan Jalankan untuk menjalankan ulang.'));
@@ -163,6 +254,7 @@ function tabelJejak(steps) {
   tabel.appendChild(kepala);
   steps.forEach((s, i) => {
     const baris = el('tr');
+    baris.dataset.langkah = String(i + 1); // disorot oleh animasi jejak
     baris.appendChild(el('td', String(i + 1)));
     baris.appendChild(el('td', `δ(${s.from}, ${s.symbol})`));
     baris.appendChild(el('td', s.to));
@@ -181,10 +273,17 @@ function tampilkanSimulasi(data) {
     : kotak('galat', '✖', `DITOLAK, berhenti di ${r.finalState}`);
   status.classList.add('status-hasil');
   ganti(hasil, status, el('h3', 'Jejak'), tabelJejak(r.steps));
+
+  // Diagram digambar dari DFA yang baru saja disimulasikan, supaya animasi
+  // pasti cocok dengan gambarnya.
+  jejak = { start: data.dfa.start, hasil: r, posisi: 0 };
+  perbaruiDiagram({ syntaxError: null, errors: [], warnings: data.warnings, dfa: data.dfa });
+  if (!kurangiGerak.matches) putarJejak();
 }
 
 async function jalankan() {
   ganti(tandaInput);
+  hentikanJejak();
   hasilBerlaku = true;
   try {
     const res = await fetch('/api/simulasi', {

@@ -347,18 +347,24 @@
       class: 'graf',
     });
 
+    // Dua kepala panah: biasa, dan untuk panah yang sedang disorot (animasi jejak).
     const defs = elSvg('defs');
-    const penanda = elSvg('marker', {
-      id: 'kepala-panah',
-      viewBox: '0 0 10 10',
-      refX: 10,
-      refY: 5,
-      markerWidth: 8,
-      markerHeight: 8,
-      orient: 'auto',
-    });
-    penanda.appendChild(elSvg('path', { d: 'M 0 1 L 10 5 L 0 9 z', class: 'kepala-panah' }));
-    defs.appendChild(penanda);
+    for (const [id, kelas] of [['kepala-panah', 'kepala-panah'], ['kepala-panah-sorot', 'kepala-panah sorot']]) {
+      const penanda = elSvg('marker', {
+        id,
+        viewBox: '0 0 10 10',
+        refX: 10,
+        refY: 5,
+        // Ukuran dalam piksel gambar, tidak ikut tebal garis, supaya kepala
+        // panah yang disorot (garis lebih tebal) tidak ikut membesar.
+        markerUnits: 'userSpaceOnUse',
+        markerWidth: 12,
+        markerHeight: 12,
+        orient: 'auto',
+      });
+      penanda.appendChild(elSvg('path', { d: 'M 0 1 L 10 5 L 0 9 z', class: kelas }));
+      defs.appendChild(penanda);
+    }
     svg.appendChild(defs);
 
     if (gambar.panahAwal) {
@@ -366,7 +372,8 @@
     }
 
     for (const p of gambar.panah) {
-      const g = elSvg('g', { class: 'transisi' });
+      // data-from/data-to dipakai Animasi.sorotDiagram untuk mencari panah ini.
+      const g = elSvg('g', { class: 'transisi', 'data-from': p.from, 'data-to': p.to });
       g.appendChild(elSvg('path', { d: p.d, class: 'panah', 'marker-end': 'url(#kepala-panah)' }));
       g.appendChild(elSvg('text', { x: p.labelX, y: p.labelY, class: 'label-panah' }, p.label));
       svg.appendChild(g);
@@ -376,7 +383,7 @@
       const kelas = ['state'];
       if (s.akhir) kelas.push('akhir');
       if (!s.terjangkau) kelas.push('tak-terjangkau');
-      const g = elSvg('g', { class: kelas.join(' ') });
+      const g = elSvg('g', { class: kelas.join(' '), 'data-state': s.id });
       g.appendChild(elSvg('circle', { cx: s.x, cy: s.y, r: gambar.radius }));
       if (s.akhir) {
         g.appendChild(elSvg('circle', { cx: s.x, cy: s.y, r: gambar.radius - JARAK_LINGKARAN_GANDA }));

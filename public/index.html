@@ -47,6 +47,19 @@
       <h2>Diagram state</h2>
       <label for="pilih-tata-letak">Tata letak</label>
       <select id="pilih-tata-letak"></select>
+
+      <!-- Sub tahap 5d: kendali animasi jejak, muncul setelah Jalankan -->
+      <div id="kendali-jejak" hidden>
+        <div class="tombol-jejak">
+          <button type="button" id="jejak-awal">⏮ Awal</button>
+          <button type="button" id="jejak-mundur">◀ Mundur</button>
+          <button type="button" id="jejak-putar">▶ Putar</button>
+          <button type="button" id="jejak-maju">Maju ▶</button>
+        </div>
+        <div id="pita-input" aria-hidden="true"></div>
+        <p id="teks-jejak" role="status" aria-live="polite"></p>
+      </div>
+
       <div id="diagram"></div>
       <p class="keterangan">
         Panah dari luar menunjuk state awal q₀. Lingkaran ganda adalah state akhir (anggota F).
@@ -57,6 +70,7 @@
 
   <script src="graf.js"></script>
   <script src="gambar.js"></script>
+  <script src="animasi.js"></script>
   <script src="berkas.js"></script>
   <script src="app.js"></script>
 </body>

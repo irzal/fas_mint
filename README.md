@@ -29,6 +29,7 @@ fas/
 ├── public/              halaman web (HTML, CSS, JS polos)
 │   ├── graf.js          model graf (node, sisi) dan tata letak; tanpa DOM
 │   ├── gambar.js        penggambar diagram state (geometri + elemen SVG)
+│   ├── animasi.js       animasi jejak di atas diagram (keadaan tiap langkah + sorotan)
 │   ├── berkas.js        pembantu simpan/buka file .dfa
 │   └── app.js           penghubung halaman dengan API
 └── test/                tes per modul
@@ -97,7 +98,7 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
 | 5a | Tampilan hasil, jejak, peringatan, pemeriksaan langsung saat mengetik | selesai (dicoba di Chromium) |
 | 5b | Model graf (node, sisi digabung) dan tata letak berlapis/melingkar, `public/graf.js` | selesai |
 | 5c | Gambar graf SVG, menu pilihan tata letak, `public/gambar.js` | selesai (dicoba di Chromium) |
-| 5d | Animasi jejak di atas graf | belum |
+| 5d | Animasi jejak di atas graf (Awal/Mundur/Putar/Maju, pita input, sorot baris tabel), `public/animasi.js` | selesai (dicoba di Chromium) |
 | 5e | Penyelesaian: layar kecil, aksesibilitas, README | belum |
 | 5f | Menggeser node (posisi hanya selama halaman terbuka) | belum |
 | 5g | Simpan dan Buka file `.dfa` di sisi browser (unduh / pemilih file / seret-lepas) | selesai (dicoba di Chromium) |
@@ -110,4 +111,6 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
   CLI (dengan jejak langkah), semuanya dengan tes.
 - Sudah jalan di web: diagram state (SVG) yang diperbarui saat mengetik,
   dengan pilihan tata letak berlapis atau melingkar.
-- Belum: animasi jejak di atas graf (5d), menggeser node (5f), penyelesaian (5e).
+- Sudah jalan di web: animasi jejak setelah Jalankan. State aktif, panah yang
+  dipakai, simbol yang dibaca, dan baris tabel jejak disorot bersamaan.
+- Belum: menggeser node (5f), penyelesaian (5e).
