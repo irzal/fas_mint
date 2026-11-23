@@ -270,11 +270,46 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
       menjadi fitur tambahan kelak, misalnya hanya untuk input pendek.
     - Di halaman web, tabel jejak NFA memisahkan kolom hasil δ dan kolom
       ε-closure.
+  - Halaman web (jawaban rincian (g)). Aturan CLI tidak berubah: file `.fa`
+    dibaca menurut baris `type:` di dalamnya, file `.dfa` selalu DFA.
+    - Ada **widget jenis automata** (DFA / NFA) di dekat kotak definisi yang
+      selalu menunjukkan mode dokumen yang sedang dibuka.
+    - **Dokumen `.dfa`** (dibuka dari file `.dfa`, termasuk contoh `.dfa`):
+      penanganannya tidak berubah dari sekarang. Teks ditampilkan apa
+      adanya dan selalu dibaca sebagai DFA. Widget menunjukkan DFA dan
+      terkunci (tidak bisa diganti). File `.dfa` hanya bisa dibuka, tidak
+      bisa dibuat baru.
+    - **Dokumen `.fa`**: mode DFA atau NFA dipilih lewat widget. Baris
+      `type:` tidak ditampilkan di kotak definisi; saat membuka file `.fa`,
+      baris itu dibaca ke widget lalu disembunyikan dari teks (tanpa baris
+      `type:` widget menunjukkan NFA). Baris `type:` yang diketik atau
+      ditempel ke kotak definisi otomatis dipindah ke widget lalu dihapus
+      dari teks.
+    - **Membuat baru**: menu "DFA baru" dan "NFA baru". Keduanya membuat
+      dokumen `.fa` dengan mode sesuai menu.
+    - **Menyimpan**: Simpan selalu memakai format dokumen saat ini (`.fa`
+      atau `.dfa`), tanpa pilihan format. Untuk dokumen `.fa`, aplikasi
+      selalu menulis `type: DFA` atau `type: NFA` di baris pertama sesuai
+      widget, jadi file `.fa` yang disimpan aplikasi ini selalu punya baris
+      `type:`. Dokumen `.dfa` disimpan apa adanya, tanpa baris `type:`.
+    - **Menu ganti format** adalah satu-satunya cara mengganti format
+      dokumen. Ini bukan konversi, karena isi `.dfa` dibaca sama dengan
+      `.fa` + `type: DFA`:
+      - "Jadikan .fa (type: DFA)" untuk dokumen `.dfa`; sesudahnya dokumen
+        menjadi `.fa` mode DFA dan widget bisa diganti.
+      - "Jadikan .dfa" untuk dokumen `.fa` mode DFA; sesudahnya dokumen
+        menjadi `.dfa` dan widget terkunci. Tidak tersedia untuk mode NFA.
+    - **NFA menjadi `.dfa`** hanya lewat menu konversi NFA -> DFA: yang
+      disimpan adalah DFA hasil konstruksi subset, bukan teks NFA-nya.
+      Rinciannya (misalnya apakah hasil konversi juga ditampilkan di kotak
+      definisi) dibahas bersama konversi.
+    - Catatan: teks yang disalin dari kotak definisi tidak membawa baris
+      `type:`. Jika ditempel ke file `.fa` di luar aplikasi, file itu dibaca
+      sebagai NFA.
+    - Detail tahap 6: dokumen apa yang terbuka saat halaman pertama kali
+      dibuka.
   - Belum diputuskan: (e) apakah langkah konstruksi
-    subset (tabel himpunan state, ε-closure) ditampilkan untuk mahasiswa;
-    (g) di halaman web, teks tanpa
-    nama file mengikuti aturan `.fa`, kecuali teks yang dibuka dari file
-    `.dfa` (perlu dirinci saat tahap 6).
+    subset (tabel himpunan state, ε-closure) ditampilkan untuk mahasiswa.
   - Pertanyaan yang dibahas **setelah format NFA selesai didefinisikan**:
     (j) algoritma konversi DFA -> NFA (`.dfa` atau `.fa` ber-`type: DFA`
     menjadi `.fa` ber-`type: NFA`). Rinciannya bergantung pada definisi NFA
@@ -321,6 +356,7 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Halaman web (rincian (g)): widget jenis automata DFA/NFA. Dokumen `.dfa` tidak berubah penanganannya, widget DFA terkunci, `.dfa` hanya bisa dibuka. Dokumen `.fa`: mode dipilih lewat widget, baris `type:` disembunyikan dari kotak definisi (yang diketik dipindah ke widget) dan selalu ditulis saat menyimpan. Menu "DFA baru"/"NFA baru" membuat `.fa`. Simpan selalu memakai format dokumen saat ini; format hanya diganti lewat menu "Jadikan .fa (type: DFA)" / "Jadikan .dfa" (hanya mode DFA). NFA menjadi `.dfa` hanya lewat konversi NFA -> DFA. CLI tidak berubah | Mode selalu terlihat dan mudah diganti; file `.fa` yang disimpan selalu menjelaskan dirinya sendiri; `.dfa` tetap format lama |
 | 2026-11-23 | Jejak simulasi NFA: himpunan state per langkah (`start`, `steps: [{ from, symbol, moved, edges, to, epsilonEdges }]`, `finalStates`, `accepted`); hasil δ dan ε-closure dipisah; panah yang dipakai ikut dicatat; pohon komputasi bukan bentuk utama | Satu langkah per simbol seperti jejak DFA, jadi tabel dan animasi bisa dipakai lagi; himpunannya sama dengan state hasil konstruksi subset; ε-closure terpisah karena sering membingungkan |
 | 2026-11-23 | Banyak tujuan di `.fa` ditulis dengan notasi himpunan `q0 0 -> {q0, q1}` (boleh `{}` untuk ∅); nama state di `.fa` tidak boleh mengandung `{ }`, koma hanya di dalam kurung siku; tujuan ganda digabung dengan peringatan; tujuan dipisah spasi tidak dipakai; `{...}` ditolak pada DFA | Sama dengan notasi buku teks δ(q, a) = {…}; kurung kurawal untuk himpunan dan kurung siku untuk nama gabungan membuat penulisan tidak ambigu |
 | 2026-11-23 | Nama state hasil konversi NFA -> DFA memakai kurung siku: `[q0,q2]` (koma tanpa spasi), himpunan kosong `[]`, mengganti nama `{}` di baris bawah; urutan mengikuti baris `states:` NFA; tabrakan nama dilaporkan sebagai error | Kurung kurawal dipakai untuk himpunan state, jadi nama gabungan dibedakan dengan kurung siku; urutan abjad salah untuk `q10` vs `q2` |
