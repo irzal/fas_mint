@@ -157,28 +157,55 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
 - NFA (tahap 6, sudah diputuskan, belum dikerjakan):
   - Satu pasangan (state, simbol) boleh punya banyak transisi atau tidak sama
     sekali, dan simbol `ε` diizinkan.
-  - Ekstensi file NFA adalah `.fa` (finite automaton). Karena DFA adalah kasus
-    khusus NFA, DFA juga boleh ditulis di file `.fa`; isinya dibaca menurut
-    aturan NFA.
-  - File `.dfa` tetap khusus DFA dengan aturan V1-V6b seperti sekarang.
+  - Format file baru adalah `.fa` (finite automaton), untuk NFA maupun DFA.
+    Jenisnya ditentukan oleh baris `type:` di dalam file:
+
+    | Isi file `.fa`        | Dibaca sebagai | Aturan validasi                    |
+    |-----------------------|----------------|------------------------------------|
+    | tanpa baris `type:`   | NFA            | aturan NFA (V6 tidak berlaku)      |
+    | `type: NFA`           | NFA            | aturan NFA                         |
+    | `type: DFA`           | DFA            | V1-V6b, sama dengan `.dfa`         |
+
+    Bawaan NFA karena DFA adalah kasus khusus NFA, dan kasus khususlah yang
+    diberi tanda.
+  - `.dfa` hanya untuk kompatibilitas file lama dan tidak memerlukan baris
+    `type:`. Isinya selalu dibaca sebagai DFA dengan aturan V1-V6b seperti
+    sekarang. Jika ada baris `type:` di file `.dfa`, baris itu diabaikan:
+    `type: DFA` diabaikan tanpa pesan; nilai lain (misalnya `type: NFA`)
+    diabaikan dengan peringatan, misalnya `baris 'type: NFA' diabaikan: file
+    .dfa selalu dibaca sebagai DFA; simpan sebagai .fa jika maksudnya NFA`.
+    File baru memakai `.fa`.
+  - Perbedaan utama: DFA (file `.dfa`, atau `.fa` dengan `type: DFA`) lebih
+    ketat, karena tiap pasangan (state, simbol) wajib punya tepat satu
+    tujuan (V6). NFA lebih longgar: boleh banyak tujuan, boleh tidak ada,
+    dan boleh ε. NFA -> DFA harus lewat konversi (konstruksi subset).
   - Konversi NFA -> DFA (konstruksi subset) wajib ada bersama NFA, tidak
-    boleh menyusul. Hasilnya disimpan sebagai file `.dfa`, supaya jelas
-    bahwa itu DFA.
-  - Fitur mengubah file `.dfa` menjadi `.fa` (setiap DFA adalah NFA, jadi
-    isinya tetap sah sebagai NFA).
-  - Perbedaan utama kedua format: `.dfa` lebih ketat, karena tiap pasangan
-    (state, simbol) wajib punya tepat satu tujuan (V6). `.fa` lebih longgar:
-    boleh banyak tujuan, boleh tidak ada, dan boleh ε. Karena itu `.dfa` ke
-    `.fa` selalu bisa langsung, sedangkan `.fa` ke `.dfa` harus lewat
-    konversi (konstruksi subset).
-  - Belum diputuskan: (a) apakah baris penanda jenis seperti `type: NFA`
-    masih perlu, atau jenis cukup ditentukan dari ekstensi file (di halaman
-    web: dari nama file); (b) cara menulis ε di file (`ε` saja, atau juga
+    boleh menyusul. Hasilnya file `.fa` berisi `type: DFA`.
+  - Isi file `.dfa` sama artinya dengan file `.fa` berisi isi yang sama
+    ditambah baris `type: DFA`: baris itu membuat file `.fa` dibaca persis
+    seperti file `.dfa`. Ini cara membaca, bukan konversi.
+  - Konversi `.dfa` -> `.fa` adalah konversi DFA -> NFA, yaitu sama dengan
+    mengubah file `.fa` ber-`type: DFA` menjadi file `.fa` ber-`type: NFA`.
+    Konversi ini memakai algoritma tersendiri, lihat rincian (j).
+  - Belum diputuskan: (b) cara menulis ε di file (`ε` saja, atau juga
     `eps`); (c) bentuk jejak simulasi NFA (himpunan state per langkah);
     (d) penamaan state hasil konversi, misalnya `{q0,q1}` dan `∅` untuk
     dead state (keduanya sah sebagai nama state menurut bagian 4); (e)
     apakah langkah konstruksi subset (tabel himpunan state, ε-closure)
-    ditampilkan untuk mahasiswa.
+    ditampilkan untuk mahasiswa; (f) apakah banyak tujuan boleh ditulis
+    dalam satu baris (`q0 0 -> q0 q1`) selain beberapa baris; (g) di
+    halaman web, teks tanpa nama file mengikuti aturan `.fa`, kecuali teks
+    yang dibuka dari file `.dfa` (perlu dirinci saat tahap 6); (h) apakah
+    NFA tanpa `type:` yang ternyata memenuhi syarat DFA diberi info
+    "tulis `type: DFA` jika maksudnya DFA"; (i) di file `.fa`, apakah
+    `type:` boleh di baris mana saja (konsisten dengan bagian 4 aturan 5,
+    paling banyak satu kali) atau wajib di baris pertama. Usul: boleh di
+    mana saja, dianjurkan di baris pertama.
+  - Pertanyaan yang dibahas **setelah format NFA selesai didefinisikan**:
+    (j) algoritma konversi DFA -> NFA (`.dfa` atau `.fa` ber-`type: DFA`
+    menjadi `.fa` ber-`type: NFA`). Rinciannya bergantung pada definisi NFA
+    yang dipakai, misalnya jika δ NFA ditulis sebagai himpunan
+    (δ(q, a) = {p}), transisi DFA perlu ditulis ulang.
 - Posisi node untuk visualisasi web, misalnya `layout: q0 100 80`.
 - Konfigurasi gambar graf transisi (tata letak bawaan, posisi node, tampilan)
   di file terpisah, mirip CSS terhadap HTML, sehingga file `.dfa` tetap hanya
@@ -220,6 +247,9 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Konversi `.dfa` -> `.fa` adalah konversi DFA -> NFA (sama dengan `.fa` ber-`type: DFA` menjadi `.fa` ber-`type: NFA`) dengan algoritma tersendiri; algoritmanya dibahas setelah format NFA selesai didefinisikan (rincian (j) bagian 8). Mencabut "mengubah `.dfa` ke `.fa` berarti menambahkan `type: DFA`" di baris-baris bawah. Tetap berlaku: isi `.dfa` dibaca sama dengan `.fa` + `type: DFA` (cara membaca, bukan konversi) | Konversi menghasilkan NFA, dan bentuknya bergantung pada definisi NFA |
+| 2026-11-23 | File `.dfa` tidak memerlukan baris `type:`. Jika ada, baris itu diabaikan: `type: DFA` tanpa pesan, nilai lain (mis. `type: NFA`) dengan peringatan. Mengganti "`.dfa` berisi `type: NFA` adalah error" di baris bawah | `.dfa` tetap format lama; file tetap bisa dibuka, dan mahasiswa diberi tahu jika maksudnya NFA |
+| 2026-11-23 | Jenis automata ditentukan baris `type:` (rincian (a) bagian 8). File `.fa` tanpa `type:` dibaca sebagai NFA; `type: DFA` membuatnya DFA dengan aturan V1-V6b. `.dfa` hanya untuk kompatibilitas file lama dan selalu DFA; `.dfa` berisi `type: NFA` adalah error. Hasil konversi NFA -> DFA menjadi `.fa` berisi `type: DFA` (mengganti keputusan "hasilnya `.dfa`" di baris bawah). Mengubah `.dfa` ke `.fa` berarti menambahkan `type: DFA` | DFA kasus khusus NFA, jadi kasus khusus yang diberi tanda; isi file menjelaskan dirinya sendiri (juga untuk teks yang ditempel di web); file `.dfa` lama tetap diperiksa dengan aturan DFA |
 | 2026-11-23 | NFA (tahap 6): ekstensi `.fa`; DFA boleh juga ditulis di `.fa` karena DFA kasus khusus NFA; `.dfa` tetap khusus DFA. Konversi NFA -> DFA wajib ada bersama NFA dan hasilnya disimpan sebagai `.dfa`. Ada fitur mengubah `.dfa` menjadi `.fa`. Rincian yang belum diputuskan dicatat di bagian 8 | NFA generalisasi DFA, jadi satu format `.fa` cukup untuk keduanya; ekstensi `.dfa` menjamin isinya DFA |
 | 2026-11-23 | Menggeser state (sub tahap 5f): posisi hasil geser disimpan sebagai lapisan data tersendiri (nama state -> posisi), terpisah per tata letak, dan menimpa posisi bawaan lewat `terapkanGeser`. Posisi tetap berlaku saat teks `.dfa` diubah selama nama statenya masih ada di Q; tombol "Kembalikan posisi" menghapusnya untuk tata letak yang sedang dipakai. Selain diseret (mouse/sentuh), state bisa dipilih dengan Tab dan digeser dengan tombol panah (10 piksel, Shift: 1 piksel) | Lapisan data yang sama kelak bisa disimpan ke file konfigurasi gambar (bagian 8); menyunting teks tidak menghapus hasil geser; tetap bisa dipakai tanpa mouse |
 | 2026-11-23 | Animasi jejak (sub tahap 5d): jejak dilihat sebagai posisi 0..n (0 = di q₀, belum membaca simbol; k = sesudah langkah ke-k). Yang disorot bersamaan: state aktif, panah yang baru dipakai, simbol yang baru dibaca, dan baris tabel jejak. Teks memakai notasi `δ(p, a) = q`; di akhir ditulis `q ∈ F: DITERIMA` atau `q ∉ F: DITOLAK`. Diputar otomatis satu langkah per detik setelah Jalankan, kecuali jika pengguna meminta gerak dikurangi (prefers-reduced-motion); tombol Awal, Mundur, Putar/Jeda, Maju. Animasi berhenti jika definisi atau input berubah | Mahasiswa bisa mencocokkan tiap langkah δ dengan diagram dan tabel; hasil akhir tidak hanya ditandai warna |
