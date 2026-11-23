@@ -26,7 +26,12 @@ function el(tag, teks, kelas) {
 // Kotak pesan: ikon + judul, lalu (opsional) daftar butir.
 function kotak(kelas, ikon, judul, butir = []) {
   const k = el('div', undefined, 'kotak ' + kelas);
-  k.appendChild(el('p', ikon + ' ' + judul));
+  // Ikon hanya hiasan (kata di judul sudah menjelaskan), jadi tidak dibacakan.
+  const p = el('p');
+  const i = el('span', ikon);
+  i.setAttribute('aria-hidden', 'true');
+  p.append(i, ' ' + judul);
+  k.appendChild(p);
   if (butir.length > 0) {
     const ul = el('ul');
     for (const b of butir) ul.appendChild(el('li', b));
@@ -98,6 +103,8 @@ function geserTataLetakIni() {
   return posisiGeser.get(pilihTataLetak.value);
 }
 
+const SKALA_MIN_DIAGRAM = 0.75;
+
 // Gambar terakhir (hasil Gambar.susunGambar), dipakai saat menyeret.
 let gambarTerakhir = null;
 
@@ -109,7 +116,11 @@ function buatSvgDiagram(kotakTetap) {
   gambarTerakhir = Gambar.susunGambar(graf, tataLetak);
   if (kotakTetap) gambarTerakhir.kotak = kotakTetap;
   const judul = `Diagram state: ${graf.nodes.length} state, ${graf.edges.length} panah transisi`;
-  return Gambar.buatSvg(gambarTerakhir, judul);
+  const svg = Gambar.buatSvg(gambarTerakhir, judul);
+  // Di layar sempit gambar boleh mengecil, tetapi tidak di bawah 75% supaya
+  // tulisannya tetap terbaca; selebihnya diagram digulung ke samping.
+  svg.style.minWidth = `${Math.round(gambarTerakhir.kotak.lebar * SKALA_MIN_DIAGRAM)}px`;
+  return svg;
 }
 
 function gambarDiagram() {
@@ -289,7 +300,12 @@ function tampilkanJejak() {
   tombolAwal.disabled = k.posisi === 0;
   tombolMundur.disabled = k.posisi === 0;
   tombolMaju.disabled = k.selesai;
-  tombolPutar.textContent = timerJejak ? '⏸ Jeda' : '▶ Putar';
+  const ikon = el('span', timerJejak ? '⏸' : '▶');
+  ikon.setAttribute('aria-hidden', 'true');
+  tombolPutar.replaceChildren(ikon, timerJejak ? ' Jeda' : ' Putar');
+  // Selama diputar, teks langkah tidak diumumkan tiap detik oleh pembaca layar;
+  // saat dijeda atau dijalankan per langkah, diumumkan.
+  teksJejak.setAttribute('aria-live', timerJejak ? 'off' : 'polite');
 }
 
 function keJejak(posisi) {

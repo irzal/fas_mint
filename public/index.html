@@ -54,17 +54,17 @@
       <!-- Sub tahap 5d: kendali animasi jejak, muncul setelah Jalankan -->
       <div id="kendali-jejak" hidden>
         <div class="tombol-jejak">
-          <button type="button" id="jejak-awal">⏮ Awal</button>
-          <button type="button" id="jejak-mundur">◀ Mundur</button>
-          <button type="button" id="jejak-putar">▶ Putar</button>
-          <button type="button" id="jejak-maju">Maju ▶</button>
+          <button type="button" id="jejak-awal"><span aria-hidden="true">⏮</span> Awal</button>
+          <button type="button" id="jejak-mundur"><span aria-hidden="true">◀</span> Mundur</button>
+          <button type="button" id="jejak-putar"><span aria-hidden="true">▶</span> Putar</button>
+          <button type="button" id="jejak-maju">Maju <span aria-hidden="true">▶</span></button>
         </div>
         <div id="pita-input" aria-hidden="true"></div>
         <p id="teks-jejak" role="status" aria-live="polite"></p>
       </div>
 
       <div id="diagram"></div>
-      <p class="keterangan">
+      <p class="keterangan" id="keterangan-diagram">
         Panah dari luar menunjuk state awal q₀. Lingkaran ganda adalah state akhir (anggota F).
         Garis putus-putus menandai state yang tidak terjangkau dari q₀.
         Seret state untuk memindahkannya, atau pilih state dengan Tab lalu geser dengan tombol panah.

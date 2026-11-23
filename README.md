@@ -14,6 +14,24 @@ npm test           # menjalankan semua tes (node --test)
 npm run cli -- contoh/berakhiran-01.dfa 0101
 ```
 
+## Memakai halaman web
+
+1. Pilih contoh di "Muat contoh", tulis DFA sendiri di kotak definisi, atau
+   buka file `.dfa` dari komputer (tombol Buka…, atau seret file ke kotak).
+2. Kotak "Pemeriksaan DFA" langsung memberi tahu jika DFA belum valid,
+   misalnya `δ(q1, 1) belum didefinisikan`. Diagram state ikut diperbarui
+   saat mengetik.
+3. Tulis string input (kosongkan untuk ε), lalu tekan Jalankan (atau Enter).
+   Hasil DITERIMA/DITOLAK dan tabel jejak muncul, lalu jejaknya diputar di
+   diagram: state aktif, panah δ yang dipakai, dan simbol yang dibaca disorot.
+   Pakai tombol Awal, Mundur, Putar/Jeda, dan Maju untuk mengikuti per langkah.
+4. Jika diagram kurang rapi, ganti tata letak atau seret state ke tempat lain.
+   Dengan keyboard: Tab ke state, lalu tombol panah (Shift + panah: geser halus).
+5. Simpan menyimpan definisi ke komputer sebagai file `.dfa`.
+
+Halaman bisa dipakai di ponsel. Di layar sempit, diagram yang lebar bisa
+digulung ke samping.
+
 ## Struktur folder
 
 ```
@@ -101,7 +119,7 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
 | 5b | Model graf (node, sisi digabung) dan tata letak berlapis/melingkar, `public/graf.js` | selesai |
 | 5c | Gambar graf SVG, menu pilihan tata letak, `public/gambar.js` | selesai (dicoba di Chromium) |
 | 5d | Animasi jejak di atas graf (Awal/Mundur/Putar/Maju, pita input, sorot baris tabel), `public/animasi.js` | selesai (dicoba di Chromium) |
-| 5e | Penyelesaian: layar kecil, aksesibilitas, README | belum |
+| 5e | Penyelesaian: layar kecil (tanpa gulung samping halaman, huruf isian 16px, tombol 44px, diagram minimal 75% lalu digulung), aksesibilitas (SVG `role="group"`, ikon tidak dibacakan, teks langkah tidak diumumkan selama diputar, kontras), README | selesai (dicoba di Chromium, lebar 320, 375, dan 1000 px) |
 | 5f | Menggeser node dengan mouse/sentuh atau tombol panah, tombol "Kembalikan posisi"; posisi per tata letak, hanya selama halaman terbuka (`Graf.terapkanGeser`) | selesai (dicoba di Chromium) |
 | 5g | Simpan dan Buka file `.dfa` di sisi browser (unduh / pemilih file / seret-lepas) | selesai (dicoba di Chromium) |
 | nanti | Konfigurasi gambar graf di file terpisah (lihat spesifikasi bagian 8) | belum |
@@ -117,4 +135,4 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
   dipakai, simbol yang dibaca, dan baris tabel jejak disorot bersamaan.
 - Sudah jalan di web: menggeser state di diagram (seret, atau Tab lalu tombol
   panah). Posisi tetap saat teks diubah, selama nama statenya masih ada.
-- Belum: penyelesaian (5e).
+- Tahap 5 selesai. Yang masih "nanti" ada di tabel di atas.

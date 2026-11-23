@@ -7,6 +7,9 @@ body {
   background: #fafafa;
 }
 main { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+/* min-width: 0 supaya kolom boleh lebih sempit dari isinya (mis. teks pilihan
+   yang panjang); tanpa ini halaman melebar melewati layar ponsel. */
+main > section { min-width: 0; }
 @media (max-width: 700px) { main { grid-template-columns: 1fr; } }
 label { display: block; margin-top: 12px; font-weight: 600; }
 textarea, input, select { width: 100%; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 14px; }
@@ -74,17 +77,28 @@ textarea.seret { outline: 3px dashed #1b7f3b; outline-offset: -3px; background: 
 .tombol-jejak button { margin-top: 0; padding: 6px 10px; }
 #pita-input { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 8px; font-family: ui-monospace, monospace; }
 #pita-input .simbol { min-width: 1.6em; padding: 2px 4px; text-align: center; border: 1px solid #ccc; background: #fff; }
-#pita-input .simbol.dibaca { color: #888; background: #f0f0f0; }
+#pita-input .simbol.dibaca { color: #5f5f5f; background: #f0f0f0; }
 #pita-input .simbol.sekarang { border: 2px solid #9a6700; background: #fff3c4; font-weight: 700; }
 #teks-jejak { margin: 6px 0 0; font-family: ui-monospace, monospace; font-size: 14px; min-height: 2.8em; }
 tr.aktif td { background: #fff3c4; font-weight: 700; }
 
 /* Menggeser state (sub tahap 5f) */
 .baris-tata-letak { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.baris-tata-letak select { flex: 1 1 14em; width: auto; }
+.baris-tata-letak select { flex: 1 1 14em; width: auto; min-width: 0; }
 .baris-tata-letak button { margin-top: 0; }
 .graf .state { cursor: grab; touch-action: none; }
 #diagram.menyeret, #diagram.menyeret .graf .state { cursor: grabbing; }
 #diagram.menyeret svg.graf { overflow: visible; }
 .graf .state:focus { outline: none; }
 .graf .state:focus-visible circle:first-of-type { stroke: #0b57d0; stroke-width: 3.5; stroke-dasharray: none; }
+
+/* Layar kecil (sub tahap 5e) */
+@media (max-width: 700px) {
+  body { padding: 12px; }
+  h1 { font-size: 1.6rem; }
+  /* 16px: browser ponsel tidak memperbesar halaman saat kolom isian disentuh */
+  textarea, input, select { font-size: 16px; }
+  /* sasaran sentuh yang cukup besar untuk jari */
+  button { min-height: 44px; }
+  .tombol-jejak button { flex: 1 1 auto; }
+}

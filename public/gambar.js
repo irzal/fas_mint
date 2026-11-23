@@ -342,8 +342,11 @@
       viewBox: `${k.x} ${k.y} ${k.lebar} ${k.tinggi}`,
       width: k.lebar,
       height: k.tinggi,
-      role: 'img',
+      // role group (bukan img): state di dalamnya bisa difokus dan digeser,
+      // jadi pembaca layar harus tetap bisa masuk ke dalam gambar.
+      role: 'group',
       'aria-label': judul,
+      'aria-describedby': 'keterangan-diagram',
       class: 'graf',
     });
 
