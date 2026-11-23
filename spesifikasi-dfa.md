@@ -200,17 +200,43 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
     hanya satu karakter. Aturan `.dfa` tidak berubah.
   - NFA tanpa `type:` yang kebetulan memenuhi syarat DFA tidak diberi info
     tambahan apa pun (jawaban rincian (h)); tetap dibaca sebagai NFA.
-  - Himpunan kosong (dead state) di DFA hasil konversi diberi nama `{}`
-    (sebagian jawaban rincian (d)): notasi himpunan yang sama dengan state
-    hasil konversi lain dan mudah diketik. Bukan `Ø`/`ø` (huruf Latin yang
-    mirip ∅). Nama ini hanya nama state biasa, tidak dicadangkan.
+  - Nama state DFA hasil konversi (jawaban rincian (d)) memakai **kurung
+    siku**: `[` + nama-nama state NFA dipisah koma tanpa spasi + `]`,
+    misalnya `[q0,q2]`. Himpunan kosong (dead state) bernama `[]`. Urutan
+    nama di dalamnya mengikuti urutan di baris `states:` NFA (bukan urutan
+    abjad, yang menaruh `q10` sebelum `q2`). Kurung siku dipakai, bukan
+    kurung kurawal, supaya jelas bedanya: `{q0, q1}` adalah himpunan state,
+    `[q0,q1]` adalah satu state hasil penggabungan. Konversi tetap wajib
+    mendeteksi tabrakan nama (dua himpunan berbeda menghasilkan nama yang
+    sama) dan melaporkannya sebagai error. Bukan `Ø`/`ø` untuk himpunan
+    kosong (huruf Latin yang mirip ∅).
+  - Banyak tujuan dalam satu baris (jawaban rincian (f)) ditulis dengan
+    notasi himpunan seperti buku teks:
+
+    ```
+    q0 0 -> q1              # satu tujuan, seperti sekarang
+    q0 0 -> {q0, q1}        # δ(q0, 0) = {q0, q1}
+    q0 ε -> {q1, q2}        # ε-transisi ke dua state
+    q0 1 -> {}              # δ(q0, 1) = ∅ ditulis eksplisit (boleh)
+    ```
+
+    - Di dalam `{ }` elemen dipisah koma; spasi setelah koma boleh ada atau
+      tidak (`{q0,q1}` sama dengan `{q0, q1}`).
+    - Di file `.fa`, nama state tidak boleh mengandung `{` atau `}` (khusus
+      untuk himpunan), dan koma di dalam nama state hanya boleh di dalam
+      kurung siku. Jadi `{[q0,q1], q2}` adalah dua elemen: `[q0,q1]` dan
+      `q2`.
+    - Bentuk satu baris dan beberapa baris boleh dicampur. Tujuan yang
+      tertulis dua kali untuk pasangan (state, simbol) yang sama digabung
+      dan diberi peringatan.
+    - Tujuan dipisah spasi tanpa kurung (`q0 0 -> q0 q1`) tidak dipakai,
+      supaya hanya ada satu cara menulis banyak tujuan.
+    - Pada DFA (`.dfa`, atau `.fa` ber-`type: DFA`) notasi `{...}` ditolak;
+      tepat satu tujuan per pasangan (V6). Format `.dfa` tidak berubah.
   - Belum diputuskan: (c) bentuk jejak simulasi NFA (himpunan state per
-    langkah); (d) penamaan state hasil konversi selain himpunan kosong,
-    misalnya `{q0,q1}` (tanpa spasi, karena nama state tidak boleh berisi
-    spasi; urutan nama di dalamnya juga perlu ditentukan); (e) apakah langkah konstruksi
+    langkah); (e) apakah langkah konstruksi
     subset (tabel himpunan state, ε-closure) ditampilkan untuk mahasiswa;
-    (f) apakah banyak tujuan boleh ditulis dalam satu baris
-    (`q0 0 -> q0 q1`) selain beberapa baris; (g) di halaman web, teks tanpa
+    (g) di halaman web, teks tanpa
     nama file mengikuti aturan `.fa`, kecuali teks yang dibuka dari file
     `.dfa` (perlu dirinci saat tahap 6).
   - Pertanyaan yang dibahas **setelah format NFA selesai didefinisikan**:
@@ -259,6 +285,8 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Banyak tujuan di `.fa` ditulis dengan notasi himpunan `q0 0 -> {q0, q1}` (boleh `{}` untuk ∅); nama state di `.fa` tidak boleh mengandung `{ }`, koma hanya di dalam kurung siku; tujuan ganda digabung dengan peringatan; tujuan dipisah spasi tidak dipakai; `{...}` ditolak pada DFA | Sama dengan notasi buku teks δ(q, a) = {…}; kurung kurawal untuk himpunan dan kurung siku untuk nama gabungan membuat penulisan tidak ambigu |
+| 2026-11-23 | Nama state hasil konversi NFA -> DFA memakai kurung siku: `[q0,q2]` (koma tanpa spasi), himpunan kosong `[]`, mengganti nama `{}` di baris bawah; urutan mengikuti baris `states:` NFA; tabrakan nama dilaporkan sebagai error | Kurung kurawal dipakai untuk himpunan state, jadi nama gabungan dibedakan dengan kurung siku; urutan abjad salah untuk `q10` vs `q2` |
 | 2026-11-23 | Himpunan kosong (dead state) di DFA hasil konversi NFA -> DFA bernama `{}` | Notasi himpunan, sejalan dengan nama seperti `{q0,q1}`; mudah diketik |
 | 2026-11-23 | Format `.fa`, rincian (b), (h), (i) bagian 8: `type:` wajib menjadi baris bermakna pertama (komentar dan baris kosong boleh di atasnya); string kosong boleh ditulis `ε`, `eps`, `λ`, atau `lam`, sehingga `ε` dan `λ` dicadangkan (bukan simbol alfabet) di `.fa`; NFA tanpa `type:` yang memenuhi syarat DFA tidak diberi info tambahan | `type:` menentukan cara membaca seluruh file; sebagian buku teks memakai λ untuk string kosong; `eps`/`lam` mudah diketik |
 | 2026-11-23 | Konversi `.dfa` -> `.fa` adalah konversi DFA -> NFA (sama dengan `.fa` ber-`type: DFA` menjadi `.fa` ber-`type: NFA`) dengan algoritma tersendiri; algoritmanya dibahas setelah format NFA selesai didefinisikan (rincian (j) bagian 8). Mencabut "mengubah `.dfa` ke `.fa` berarti menambahkan `type: DFA`" di baris-baris bawah. Tetap berlaku: isi `.dfa` dibaca sama dengan `.fa` + `type: DFA` (cara membaca, bukan konversi) | Konversi menghasilkan NFA, dan bentuknya bergantung pada definisi NFA |
