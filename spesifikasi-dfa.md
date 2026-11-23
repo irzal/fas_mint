@@ -187,20 +187,32 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
   - Konversi `.dfa` -> `.fa` adalah konversi DFA -> NFA, yaitu sama dengan
     mengubah file `.fa` ber-`type: DFA` menjadi file `.fa` ber-`type: NFA`.
     Konversi ini memakai algoritma tersendiri, lihat rincian (j).
-  - Belum diputuskan: (b) cara menulis ε di file (`ε` saja, atau juga
-    `eps`); (c) bentuk jejak simulasi NFA (himpunan state per langkah);
-    (d) penamaan state hasil konversi, misalnya `{q0,q1}` dan `∅` untuk
-    dead state (keduanya sah sebagai nama state menurut bagian 4); (e)
-    apakah langkah konstruksi subset (tabel himpunan state, ε-closure)
-    ditampilkan untuk mahasiswa; (f) apakah banyak tujuan boleh ditulis
-    dalam satu baris (`q0 0 -> q0 q1`) selain beberapa baris; (g) di
-    halaman web, teks tanpa nama file mengikuti aturan `.fa`, kecuali teks
-    yang dibuka dari file `.dfa` (perlu dirinci saat tahap 6); (h) apakah
-    NFA tanpa `type:` yang ternyata memenuhi syarat DFA diberi info
-    "tulis `type: DFA` jika maksudnya DFA"; (i) di file `.fa`, apakah
-    `type:` boleh di baris mana saja (konsisten dengan bagian 4 aturan 5,
-    paling banyak satu kali) atau wajib di baris pertama. Usul: boleh di
-    mana saja, dianjurkan di baris pertama.
+  - Baris `type:` (jawaban rincian (i)): jika ada, wajib menjadi baris
+    bermakna pertama, karena baris itu menentukan apakah file dibaca dengan
+    aturan DFA atau NFA. Komentar dan baris kosong boleh ada di atasnya.
+    Baris `type:` di posisi lain adalah error. Ini pengecualian dari bagian 4
+    aturan 5 (urutan baris bebas), yang hanya berlaku untuk `type:`.
+  - String kosong (jawaban rincian (b)): di file `.fa` boleh ditulis dengan
+    empat cara yang artinya sama: `ε` atau `eps` (epsilon), dan `λ` atau
+    `lam` (lambda), karena sebagian buku teks memakai λ. Akibatnya `ε` dan
+    `λ` tidak boleh menjadi simbol alfabet di file `.fa`. `eps` dan `lam`
+    tidak bisa bertabrakan dengan simbol alfabet, karena simbol alfabet
+    hanya satu karakter. Aturan `.dfa` tidak berubah.
+  - NFA tanpa `type:` yang kebetulan memenuhi syarat DFA tidak diberi info
+    tambahan apa pun (jawaban rincian (h)); tetap dibaca sebagai NFA.
+  - Himpunan kosong (dead state) di DFA hasil konversi diberi nama `{}`
+    (sebagian jawaban rincian (d)): notasi himpunan yang sama dengan state
+    hasil konversi lain dan mudah diketik. Bukan `Ø`/`ø` (huruf Latin yang
+    mirip ∅). Nama ini hanya nama state biasa, tidak dicadangkan.
+  - Belum diputuskan: (c) bentuk jejak simulasi NFA (himpunan state per
+    langkah); (d) penamaan state hasil konversi selain himpunan kosong,
+    misalnya `{q0,q1}` (tanpa spasi, karena nama state tidak boleh berisi
+    spasi; urutan nama di dalamnya juga perlu ditentukan); (e) apakah langkah konstruksi
+    subset (tabel himpunan state, ε-closure) ditampilkan untuk mahasiswa;
+    (f) apakah banyak tujuan boleh ditulis dalam satu baris
+    (`q0 0 -> q0 q1`) selain beberapa baris; (g) di halaman web, teks tanpa
+    nama file mengikuti aturan `.fa`, kecuali teks yang dibuka dari file
+    `.dfa` (perlu dirinci saat tahap 6).
   - Pertanyaan yang dibahas **setelah format NFA selesai didefinisikan**:
     (j) algoritma konversi DFA -> NFA (`.dfa` atau `.fa` ber-`type: DFA`
     menjadi `.fa` ber-`type: NFA`). Rinciannya bergantung pada definisi NFA
@@ -247,6 +259,8 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Himpunan kosong (dead state) di DFA hasil konversi NFA -> DFA bernama `{}` | Notasi himpunan, sejalan dengan nama seperti `{q0,q1}`; mudah diketik |
+| 2026-11-23 | Format `.fa`, rincian (b), (h), (i) bagian 8: `type:` wajib menjadi baris bermakna pertama (komentar dan baris kosong boleh di atasnya); string kosong boleh ditulis `ε`, `eps`, `λ`, atau `lam`, sehingga `ε` dan `λ` dicadangkan (bukan simbol alfabet) di `.fa`; NFA tanpa `type:` yang memenuhi syarat DFA tidak diberi info tambahan | `type:` menentukan cara membaca seluruh file; sebagian buku teks memakai λ untuk string kosong; `eps`/`lam` mudah diketik |
 | 2026-11-23 | Konversi `.dfa` -> `.fa` adalah konversi DFA -> NFA (sama dengan `.fa` ber-`type: DFA` menjadi `.fa` ber-`type: NFA`) dengan algoritma tersendiri; algoritmanya dibahas setelah format NFA selesai didefinisikan (rincian (j) bagian 8). Mencabut "mengubah `.dfa` ke `.fa` berarti menambahkan `type: DFA`" di baris-baris bawah. Tetap berlaku: isi `.dfa` dibaca sama dengan `.fa` + `type: DFA` (cara membaca, bukan konversi) | Konversi menghasilkan NFA, dan bentuknya bergantung pada definisi NFA |
 | 2026-11-23 | File `.dfa` tidak memerlukan baris `type:`. Jika ada, baris itu diabaikan: `type: DFA` tanpa pesan, nilai lain (mis. `type: NFA`) dengan peringatan. Mengganti "`.dfa` berisi `type: NFA` adalah error" di baris bawah | `.dfa` tetap format lama; file tetap bisa dibuka, dan mahasiswa diberi tahu jika maksudnya NFA |
 | 2026-11-23 | Jenis automata ditentukan baris `type:` (rincian (a) bagian 8). File `.fa` tanpa `type:` dibaca sebagai NFA; `type: DFA` membuatnya DFA dengan aturan V1-V6b. `.dfa` hanya untuk kompatibilitas file lama dan selalu DFA; `.dfa` berisi `type: NFA` adalah error. Hasil konversi NFA -> DFA menjadi `.fa` berisi `type: DFA` (mengganti keputusan "hasilnya `.dfa`" di baris bawah). Mengubah `.dfa` ke `.fa` berarti menambahkan `type: DFA` | DFA kasus khusus NFA, jadi kasus khusus yang diberi tanda; isi file menjelaskan dirinya sendiri (juga untuk teks yang ditempel di web); file `.dfa` lama tetap diperiksa dengan aturan DFA |
