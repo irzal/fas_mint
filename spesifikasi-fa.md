@@ -97,6 +97,10 @@ dan setiap pelanggaran menghasilkan satu pesan error.
 Jumlah transisi yang benar adalah |Q| × |Σ|. Pada contoh di atas:
 3 state × 2 simbol = 6 transisi.
 
+Jika simbol yang tidak ada di Σ adalah salah satu tulisan string kosong
+(`ε`, `eps`, `λ`, `lam`), pesan V4 diberi petunjuk:
+`simbol 'ε' tidak ada di Σ (ε-transisi hanya untuk NFA)`.
+
 ### Peringatan (bukan error)
 
 Peringatan tidak membuat file ditolak. DFA tetap dijalankan.
@@ -266,7 +270,9 @@ Aturan bagian 4 tetap berlaku, ditambah:
 - Sudah diputuskan:
   - V6 (tepat satu transisi per pasangan) **tidak berlaku** untuk NFA.
   - Tujuan yang tertulis dua kali untuk pasangan (state, simbol) yang sama
-    digabung dan diberi **peringatan** (kemungkinan salah ketik).
+    (di dua baris, atau di satu himpunan seperti `{q1, q1}`) digabung dan
+    diberi **peringatan** (kemungkinan salah ketik), satu per tujuan:
+    `δ(q0, 0): tujuan 'q1' ditulis lebih dari sekali (baris 6), dihitung satu kali`.
   - NFA tanpa `type:` yang kebetulan memenuhi syarat DFA tidak diberi info
     tambahan apa pun; tetap dibaca sebagai NFA.
   - V1 sampai V5 tetap berlaku. Pada V4, simbol transisi harus anggota Σ

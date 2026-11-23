@@ -1,5 +1,15 @@
-// Validator: memeriksa apakah objek hasil parser benar-benar DFA.
-// Acuan: spesifikasi-fa.md bagian 5 (aturan V1 sampai V6b).
+// Validator: memeriksa apakah objek hasil parser benar-benar DFA atau NFA.
+// Acuan: spesifikasi-fa.md bagian 5 (DFA: aturan V1 sampai V6b) dan
+// bagian 8.5 (NFA: V1 sampai V5, tanpa V6).
+
+const { EPSILON, TULISAN_EPSILON } = require('./parser');
+
+// Pesan V4. Jika simbolnya salah satu tulisan string kosong (ε, eps, λ, lam)
+// pada DFA, tambahkan petunjuk bahwa ε-transisi hanya ada di NFA.
+function pesanV4(simbol, untukDfa) {
+  const petunjuk = untukDfa && TULISAN_EPSILON.includes(simbol) ? ' (ε-transisi hanya untuk NFA)' : '';
+  return `simbol '${simbol}' tidak ada di Σ${petunjuk}`;
+}
 
 /**
  * Semua pelanggaran dikumpulkan sekaligus (tidak berhenti di yang pertama),
@@ -46,7 +56,7 @@ function validateDfa(dfa) {
       sah = false;
     }
     if (!sigma.has(t.symbol)) {
-      errors.push(`simbol '${t.symbol}' tidak ada di Σ`);
+      errors.push(pesanV4(t.symbol, true));
       sah = false;
     }
     if (!Q.has(t.to)) {
@@ -75,6 +85,73 @@ function validateDfa(dfa) {
   return errors;
 }
 
+/**
+ * Memeriksa NFA (spesifikasi bagian 8.5). Sama dengan validateDfa untuk V1
+ * sampai V5, tetapi tanpa V6: di NFA satu pasangan (state, simbol) boleh punya
+ * banyak tujuan atau tidak punya tujuan sama sekali (δ = ∅).
+ *
+ * V4 pada NFA: simbol transisi harus anggota Σ, atau ε (parser sudah
+ * menormalkan tulisan eps, λ, lam menjadi 'ε').
+ *
+ * Urutan pesan: V1, V2, V3, lalu V4/V5 per transisi (urutan file). Pada satu
+ * baris, asal dan simbol diperiksa dulu, lalu setiap state tujuan.
+ *
+ * @param {import("./parser").Nfa} nfa objek hasil parseFa dengan type 'NFA'
+ * @returns {string[]} daftar pesan error; kosong berarti NFA valid
+ */
+function validateNfa(nfa) {
+  const errors = [];
+  const Q = new Set(nfa.states);
+  const sigma = new Set(nfa.alphabet);
+
+  // V1: state awal harus anggota Q.
+  if (!Q.has(nfa.start)) errors.push(`state awal '${nfa.start}' tidak ada di Q`);
+
+  // V2: setiap state akhir harus anggota Q.
+  for (const s of nfa.accept) {
+    if (!Q.has(s)) errors.push(`state akhir '${s}' tidak ada di Q`);
+  }
+
+  // V3: tidak ada duplikat di Q maupun Σ.
+  for (const s of duplikat(nfa.states)) errors.push(`state '${s}' ditulis dua kali di Q`);
+  for (const a of duplikat(nfa.alphabet)) errors.push(`simbol '${a}' ditulis dua kali di Σ`);
+
+  // V4 dan V5 untuk setiap baris transisi. Baris "q -> {}" (δ = ∅) tetap
+  // diperiksa asal dan simbolnya.
+  for (const t of nfa.transitions) {
+    if (!Q.has(t.from)) errors.push(`state '${t.from}' tidak ada di Q`);
+    if (t.symbol !== EPSILON && !sigma.has(t.symbol)) errors.push(pesanV4(t.symbol, false));
+    for (const ke of t.to) {
+      if (!Q.has(ke)) errors.push(`state '${ke}' tidak ada di Q`);
+    }
+  }
+  return errors;
+}
+
+/**
+ * Tujuan yang ditulis lebih dari sekali untuk pasangan (state, simbol) yang
+ * sama, baik di baris berbeda (`q0 0 -> q1` dan `q0 0 -> {q1, q2}`) maupun
+ * di satu himpunan (`{q1, q1}`). Tujuan itu tetap dihitung sekali (δ adalah
+ * himpunan), tetapi diberi peringatan karena kemungkinan salah ketik.
+ * Hasil: satu pesan per (state, simbol, tujuan), urutan kemunculan kedua di file.
+ */
+function tujuanGanda(nfa) {
+  const sudah = new Set();
+  const dilaporkan = new Set();
+  const pesan = [];
+  for (const t of nfa.transitions) {
+    for (const ke of t.to) {
+      const kunci = [t.from, t.symbol, ke].join('\0');
+      if (sudah.has(kunci) && !dilaporkan.has(kunci)) {
+        dilaporkan.add(kunci);
+        pesan.push(`δ(${t.from}, ${t.symbol}): tujuan '${ke}' ditulis lebih dari sekali (baris ${t.line}), dihitung satu kali`);
+      }
+      sudah.add(kunci);
+    }
+  }
+  return pesan;
+}
+
 // Elemen yang muncul lebih dari sekali, masing-masing dilaporkan satu kali.
 function duplikat(daftar) {
   const lihat = new Set();
@@ -89,17 +166,21 @@ function duplikat(daftar) {
 /**
  * State yang tidak bisa dicapai dari `start` dengan mengikuti transisi
  * (penelusuran graf). Urutan hasil mengikuti urutan `states`, tanpa duplikat.
- * Aman dipanggil pada DFA yang belum valid; transisi ke/dari state tak dikenal
- * hanya ikut ditelusuri apa adanya.
+ * Berlaku untuk DFA (`to` satu nama state) dan NFA (`to` daftar state). Pada
+ * NFA, ε-transisi juga dihitung sebagai jalan (bagian 8.5): state yang hanya
+ * bisa dicapai lewat ε tetap terjangkau.
+ * Aman dipanggil pada automata yang belum valid; transisi ke/dari state tak
+ * dikenal hanya ikut ditelusuri apa adanya.
  *
- * @param {import("./parser").Dfa} dfa
+ * @param {import("./parser").Dfa|import("./parser").Nfa} dfa
  * @returns {string[]}
  */
 function findUnreachable(dfa) {
   const tetangga = new Map();
   for (const t of dfa.transitions) {
     if (!tetangga.has(t.from)) tetangga.set(t.from, []);
-    tetangga.get(t.from).push(t.to);
+    const tujuan = Array.isArray(t.to) ? t.to : [t.to];
+    tetangga.get(t.from).push(...tujuan);
   }
   const terjangkau = new Set([dfa.start]);
   const antrean = [dfa.start];
@@ -127,6 +208,17 @@ function warnDfa(dfa) {
 }
 
 /**
+ * Peringatan untuk NFA (bagian 8.5): W1 (state tak terjangkau, ε ikut
+ * dihitung) lalu tujuan yang ditulis lebih dari sekali.
+ *
+ * @param {import("./parser").Nfa} nfa
+ * @returns {string[]}
+ */
+function warnNfa(nfa) {
+  return [...warnDfa(nfa), ...tujuanGanda(nfa)];
+}
+
+/**
  * Menghapus state tak terjangkau. TIDAK dipanggil otomatis; pemanggil yang
  * memutuskan. Mengembalikan DFA baru (objek asli tidak diubah): state tak
  * terjangkau dibuang dari states dan accept, beserta transisi yang berasal
@@ -146,4 +238,4 @@ function removeUnreachable(dfa) {
   };
 }
 
-module.exports = { validateDfa, warnDfa, findUnreachable, removeUnreachable };
+module.exports = { validateDfa, warnDfa, validateNfa, warnNfa, findUnreachable, removeUnreachable };
