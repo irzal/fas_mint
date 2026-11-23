@@ -233,8 +233,44 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
       supaya hanya ada satu cara menulis banyak tujuan.
     - Pada DFA (`.dfa`, atau `.fa` ber-`type: DFA`) notasi `{...}` ditolak;
       tepat satu tujuan per pasangan (V6). Format `.dfa` tidak berubah.
-  - Belum diputuskan: (c) bentuk jejak simulasi NFA (himpunan state per
-    langkah); (e) apakah langkah konstruksi
+  - Jejak simulasi NFA (jawaban rincian (c)): **himpunan state per
+    langkah**, satu langkah per simbol input seperti jejak DFA. Setiap
+    langkah mencatat hasil δ dan ε-closure secara terpisah, serta panah yang
+    dipakai (untuk menyorot beberapa panah sekaligus di diagram):
+
+    ```
+    {
+      accepted: true,            // true jika himpunan terakhir ∩ F ≠ ∅
+      start: {                   // langkah ke-0: ε-closure({q₀})
+        states: ['q0', 'q1'],
+        epsilonEdges: [{ from: 'q0', to: 'q1' }]
+      },
+      steps: [                   // satu langkah = satu simbol input
+        {
+          from: ['q0', 'q1'],    // himpunan sebelum membaca simbol
+          symbol: '0',
+          moved: ['q0', 'q2'],   // gabungan δ(q, 0) untuk setiap q di `from`
+          edges: [{ from: 'q0', symbol: '0', to: 'q0' }, { from: 'q1', symbol: '0', to: 'q2' }],
+          to: ['q0', 'q1', 'q2'],// ε-closure(moved): himpunan sesudah langkah ini
+          epsilonEdges: [{ from: 'q0', to: 'q1' }]
+        }
+      ],
+      finalStates: ['q0', 'q1', 'q2']  // himpunan terakhir
+    }
+    ```
+
+    - Urutan state di setiap himpunan mengikuti baris `states:` (sama
+      dengan aturan nama `[q0,q1]` di rincian (d)).
+    - Tanpa ε-transisi, `moved` sama dengan `to` dan `epsilonEdges` kosong.
+    - Jika himpunan menjadi kosong (semua cabang mati), simulasi tetap
+      membaca sisa input dengan himpunan kosong, lalu ditolak.
+    - Simbol input di luar Σ tetap error, sama dengan DFA (bagian 7).
+    - Pohon komputasi (setiap kemungkinan jalan ditelusuri terpisah) bukan
+      bentuk utama jejak, karena jumlah cabangnya bisa eksponensial. Bisa
+      menjadi fitur tambahan kelak, misalnya hanya untuk input pendek.
+    - Di halaman web, tabel jejak NFA memisahkan kolom hasil δ dan kolom
+      ε-closure.
+  - Belum diputuskan: (e) apakah langkah konstruksi
     subset (tabel himpunan state, ε-closure) ditampilkan untuk mahasiswa;
     (g) di halaman web, teks tanpa
     nama file mengikuti aturan `.fa`, kecuali teks yang dibuka dari file
@@ -285,6 +321,7 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Jejak simulasi NFA: himpunan state per langkah (`start`, `steps: [{ from, symbol, moved, edges, to, epsilonEdges }]`, `finalStates`, `accepted`); hasil δ dan ε-closure dipisah; panah yang dipakai ikut dicatat; pohon komputasi bukan bentuk utama | Satu langkah per simbol seperti jejak DFA, jadi tabel dan animasi bisa dipakai lagi; himpunannya sama dengan state hasil konstruksi subset; ε-closure terpisah karena sering membingungkan |
 | 2026-11-23 | Banyak tujuan di `.fa` ditulis dengan notasi himpunan `q0 0 -> {q0, q1}` (boleh `{}` untuk ∅); nama state di `.fa` tidak boleh mengandung `{ }`, koma hanya di dalam kurung siku; tujuan ganda digabung dengan peringatan; tujuan dipisah spasi tidak dipakai; `{...}` ditolak pada DFA | Sama dengan notasi buku teks δ(q, a) = {…}; kurung kurawal untuk himpunan dan kurung siku untuk nama gabungan membuat penulisan tidak ambigu |
 | 2026-11-23 | Nama state hasil konversi NFA -> DFA memakai kurung siku: `[q0,q2]` (koma tanpa spasi), himpunan kosong `[]`, mengganti nama `{}` di baris bawah; urutan mengikuti baris `states:` NFA; tabrakan nama dilaporkan sebagai error | Kurung kurawal dipakai untuk himpunan state, jadi nama gabungan dibedakan dengan kurung siku; urutan abjad salah untuk `q10` vs `q2` |
 | 2026-11-23 | Himpunan kosong (dead state) di DFA hasil konversi NFA -> DFA bernama `{}` | Notasi himpunan, sejalan dengan nama seperti `{q0,q1}`; mudah diketik |
