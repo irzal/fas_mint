@@ -329,8 +329,18 @@ diagram):
   `edges` berisi setiap (q, a, p) dengan q di `from` dan p di δ(q, a).
   Tujuan yang ditulis dua kali di file dihitung sekali.
 - Pohon komputasi (setiap kemungkinan jalan ditelusuri terpisah) bukan
-  bentuk utama jejak, karena jumlah cabangnya bisa eksponensial. Bisa menjadi
-  fitur tambahan kelak, misalnya hanya untuk input pendek.
+  bentuk utama jejak, karena jumlah cabangnya bisa eksponensial. Ia tersedia
+  sebagai tampilan tambahan (`pohonKomputasi` di `src/simulator.js`):
+  - Setiap ujung jalan diberi keterangan: diterima (q ∈ F), ditolak (q ∉ F,
+    input habis), atau mati (δ = ∅ sebelum input habis). Langkah ε tampil
+    sebagai cabang ε; langkah ε tidak kembali ke state yang sudah dilewati
+    lewat ε pada posisi input yang sama (siklus ε tidak berulang tanpa akhir).
+  - Hanya dibuat sampai 200 simpul; jika lebih, pohon tidak ditampilkan dan
+    diganti keterangan "terlalu besar".
+  - Input diterima jika dan hanya jika paling sedikit satu cabang diterima
+    (sama dengan hasil simulasi himpunan).
+  - Di halaman web: bagian yang bisa dibuka-tutup di bawah tabel jejak NFA.
+    Di CLI: pilihan `--pohon`. API `/api/simulasi` mengirimnya di field `tree`.
 
 ## 9. Konversi (tahap 6)
 
@@ -476,7 +486,10 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
   - Putar otomatis, tombol, dan aturan gerak dikurangi sama dengan DFA (5d).
 - **Mengganti dokumen**: jika isi, format, atau jenis dokumen berubah sejak
   terakhir dibuka atau disimpan, halaman meminta konfirmasi sebelum "DFA
-  baru"/"NFA baru", memilih contoh, atau membuka file.
+  baru"/"NFA baru", memilih contoh, atau membuka file. Saat halaman ditutup
+  atau dimuat ulang dalam keadaan itu, browser menampilkan peringatan
+  bawaannya. Dokumen hasil konversi di tab baru dianggap belum disimpan
+  (isinya hanya ada di tab itu).
 - **Nama state panjang di diagram**: lingkaran membesar sampai cukup untuk
   sekitar 13 huruf (mis. `[q0,q1,q2,q3]` hasil konversi), dan jarak antar
   state ikut diperbesar sebanding; nama yang lebih panjang lagi ditulis
@@ -549,6 +562,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Perbaikan kecil sesudah tahap 6: pohon komputasi NFA sebagai tampilan tambahan (maks 200 simpul; web, CLI `--pohon`, API `tree`); peringatan browser saat menutup halaman dengan perubahan belum disimpan (hasil konversi di tab baru dianggap belum disimpan); API menerima field `teks` (nama lama `dfa` tetap diterima); CLI memakai `konversiFa`; panah dipilih supaya tidak berdempetan dengan panah lain | Melihat semua cabang NFA untuk input pendek; pekerjaan tidak hilang; nama field netral; satu jalur konversi; diagram graf padat lebih terbaca |
 | 2026-11-23 | Merapikan bagian 11: butir "posisi node di dalam file (`layout: ...`)" dihapus karena bertentangan dengan keputusan 2026-10-08 (konfigurasi gambar di file terpisah); gagasan A dan B disesuaikan dengan keadaan sesudah tahap 6 (format `.fa`; NFA dan konversi sudah ada) | Spesifikasi tidak memuat rencana yang saling bertentangan atau sudah usang |
 | 2026-11-23 | Penyelesaian tahap 6 (sub tahap 6k): konfirmasi sebelum mengganti dokumen yang berubah; lingkaran state membesar sampai ±13 huruf dengan jarak antar state ikut diperbesar, nama lebih panjang memakai huruf lebih kecil (min 9 px); hasil simulasi/konversi diumumkan sebagai ringkasan untuk pembaca layar | Pekerjaan mahasiswa tidak hilang tanpa sengaja; nama hasil konversi terbaca; tabel panjang tidak dibacakan seluruhnya |
 | 2026-11-23 | Hasil konversi di halaman web dibuka sebagai dokumen baru di tab browser baru; tabel konversi tetap di tab asal | Automata asal tidak hilang dan bisa dibandingkan dengan hasilnya |

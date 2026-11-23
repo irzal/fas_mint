@@ -108,7 +108,11 @@ async function bacaJson(req, res, ...fieldTeks) {
     kirimJson(res, 400, { error: 'body harus JSON yang valid' });
     return null;
   }
-  if (data === null || typeof data !== 'object' || fieldTeks.some((f) => typeof data[f] !== 'string')) {
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+    kirimJson(res, 400, { error: 'body harus berupa objek JSON' });
+    return null;
+  }
+  if (fieldTeks.some((f) => typeof data[f] !== 'string')) {
     const daftar = fieldTeks.map((f) => `"${f}"`).join(' dan ');
     kirimJson(res, 400, { error: `field ${daftar} wajib berupa teks` });
     return null;
@@ -116,10 +120,19 @@ async function bacaJson(req, res, ...fieldTeks) {
   return data;
 }
 
+// Isi file dikirim di field "teks". Nama lama "dfa" tetap diterima supaya
+// klien lama tetap jalan (jika keduanya ada, "teks" yang dipakai). Isinya
+// boleh teks .dfa maupun .fa. Jika tidak ada, menjawab 400 dan mengembalikan null.
+function teksDariBody(data, res) {
+  if (typeof data.teks === 'string') return data.teks;
+  if (typeof data.dfa === 'string') return data.dfa;
+  kirimJson(res, 400, { error: 'field "teks" (atau "dfa") wajib berupa teks' });
+  return null;
+}
+
 // Field "format" (opsional): "fa" atau "dfa", yaitu format file yang isinya
-// dikirim di field "dfa" (spesifikasi bagian 8.1). Bawaan "dfa", supaya klien
-// lama yang tidak mengirim format tetap berperilaku sama. Nama field "dfa"
-// dipertahankan untuk klien lama; isinya boleh teks .dfa maupun .fa.
+// dikirim (spesifikasi bagian 8.1). Bawaan "dfa", supaya klien lama yang
+// tidak mengirim format tetap berperilaku sama.
 // Jika format tidak sah, langsung menjawab 400 dan mengembalikan null.
 function formatDariBody(data, res) {
   if (data.format === undefined) return 'dfa';
@@ -140,53 +153,59 @@ function jenisDariBody(data, format, res) {
   return false;
 }
 
-// POST /api/simulasi  body: { "dfa": "<isi file>", "input": "0101", "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA" }
+// POST /api/simulasi  body: { "teks": "<isi file>", "input": "0101", "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA" }
 // 200: { type, errors, warnings, automaton, dfa, result }
 //      (dfa = automaton, dipertahankan untuk klien lama; result berbentuk jejak
 //      DFA atau NFA sesuai type, atau null jika ada error)
 // 400: { error, position? }  (sintaks salah, atau simbol input di luar Σ; position
 //      = posisi simbol itu, mulai dari 1)
 async function simulasi(req, res) {
-  const data = await bacaJson(req, res, 'dfa', 'input');
+  const data = await bacaJson(req, res, 'input');
   if (!data) return;
+  const teks = teksDariBody(data, res);
+  if (teks === null) return;
   const format = formatDariBody(data, res);
   if (!format || !jenisDariBody(data, format, res)) return;
   try {
-    const h = jalankanFa(data.dfa, format, data.input, data.type);
+    const h = jalankanFa(teks, format, data.input, data.type);
     kirimJson(res, 200, { ...h, dfa: h.automaton });
   } catch (err) {
     kirimJson(res, 400, { error: err.message, position: err.position });
   }
 }
 
-// POST /api/analisis  body: { "dfa": "<isi file>", "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA" }
+// POST /api/analisis  body: { "teks": "<isi file>", "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA" }
 // Pemeriksaan tanpa simulasi (untuk pratinjau saat mengetik). Selalu 200:
 // { syntaxError, type, errors, warnings, automaton, dfa }
 async function analisisDfa(req, res) {
-  const data = await bacaJson(req, res, 'dfa');
+  const data = await bacaJson(req, res);
   if (!data) return;
+  const teks = teksDariBody(data, res);
+  if (teks === null) return;
   const format = formatDariBody(data, res);
   if (!format || !jenisDariBody(data, format, res)) return;
-  const h = analisisFa(data.dfa, format, data.type);
+  const h = analisisFa(teks, format, data.type);
   kirimJson(res, 200, { ...h, dfa: h.automaton });
 }
 
-// POST /api/konversi  body: { "dfa": "<isi file>", "arah": "ke-dfa"|"ke-nfa",
+// POST /api/konversi  body: { "teks": "<isi file>", "arah": "ke-dfa"|"ke-nfa",
 //   "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA", "buangDeadState"?: true|false }
 // 200: { type, errors, hasil }  (hasil null jika automata belum valid; untuk
 //      ke-dfa berbentuk hasil nfaToDfa, untuk ke-nfa hasil dfaToNfa)
 // 400: { error }  (sintaks salah, arah tidak dikenal, jenis tidak sesuai arah,
 //      atau konversi gagal)
 async function konversi(req, res) {
-  const data = await bacaJson(req, res, 'dfa', 'arah');
+  const data = await bacaJson(req, res, 'arah');
   if (!data) return;
+  const teks = teksDariBody(data, res);
+  if (teks === null) return;
   const format = formatDariBody(data, res);
   if (!format || !jenisDariBody(data, format, res)) return;
   if (data.buangDeadState !== undefined && typeof data.buangDeadState !== 'boolean') {
     return kirimJson(res, 400, { error: 'field "buangDeadState" harus true atau false' });
   }
   try {
-    kirimJson(res, 200, konversiFa(data.dfa, format, data.type, data.arah, { buangDeadState: data.buangDeadState }));
+    kirimJson(res, 200, konversiFa(teks, format, data.type, data.arah, { buangDeadState: data.buangDeadState }));
   } catch (err) {
     kirimJson(res, 400, { error: err.message });
   }

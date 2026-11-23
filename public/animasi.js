@@ -172,7 +172,39 @@
     }
   }
 
-  const api = { keadaanJejak, keadaanJejakNfa, sorotDiagram };
+  /**
+   * Pohon komputasi NFA (hasil pohonKomputasi di src/simulator.js) sebagai
+   * baris-baris teks, untuk halaman web dan CLI:
+   *   q0
+   *   ├─0→ q0
+   *   │   └─1→ q0  ✖ ditolak (q0 ∉ F)
+   *   └─0→ q1  ✖ mati: δ(q1, 1) = ∅
+   *
+   * @param {{ root: object }} pohon
+   * @param {string} input string input yang dijalankan
+   * @returns {string[]}
+   */
+  function teksPohon(pohon, input) {
+    const simbol = [...input];
+    const keterangan = (s) => {
+      if (s.akhir === 'diterima') return `  ✔ diterima (${s.state} ∈ F)`;
+      if (s.akhir === 'ditolak') return `  ✖ ditolak (${s.state} ∉ F)`;
+      if (s.akhir === 'mati') return `  ✖ mati: δ(${s.state}, ${simbol[s.dibaca]}) = ∅`;
+      return '';
+    };
+    const baris = [pohon.root.state + keterangan(pohon.root)];
+    const telusuri = (simpul, awalan) => {
+      simpul.anak.forEach((anak, i) => {
+        const terakhir = i === simpul.anak.length - 1;
+        baris.push(`${awalan}${terakhir ? '└─' : '├─'}${anak.lewat}→ ${anak.state}${keterangan(anak)}`);
+        telusuri(anak, awalan + (terakhir ? '    ' : '│   '));
+      });
+    };
+    telusuri(pohon.root, '');
+    return baris;
+  }
+
+  const api = { keadaanJejak, keadaanJejakNfa, sorotDiagram, teksPohon };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Animasi = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

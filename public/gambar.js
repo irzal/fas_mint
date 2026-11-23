@@ -39,6 +39,8 @@
   const LENGKUNG_BOLAK_BALIK = [30, 55, 85, 120];
   const LENGKUNG_BIASA = [0, 40, -40, 70, -70, 100, -100, 130, -130];
   const JARAK_BEBAS_LABEL = 12; // label tidak boleh lebih dekat dari ini ke panah/label lain
+  const JARAK_BEBAS_PANAH = 7; // titik panah sedekat ini ke panah lain dianggap berimpitan
+  const BATAS_IMPIT = 0.1; // paling banyak 10% bagian tengah panah boleh berimpitan
   const JARAK_LABEL = 13; // jarak label dari tengah panah
   const RUANG_BEBAS = 6; // panah tidak boleh lebih dekat dari ini ke state lain
   const TEPI = 10; // ruang kosong di sekeliling gambar
@@ -157,15 +159,38 @@
       const labelKeLain = jarakTerdekat([hasil.label], [...titikPanah, ...titikLabel]) - JARAK_BEBAS_LABEL;
       const kurvaKeLabel = jarakTerdekat(sampel, titikLabel) - JARAK_BEBAS_LABEL;
       const keRapian = Math.min(labelKeLain, kurvaKeLabel);
-      if (keState >= 0 && keRapian >= 0) return hasil;
-      // Menabrak state lebih buruk daripada label bertumpuk, jadi dinilai dulu.
-      const skor = [Math.min(0, keState), keRapian];
-      if (skorTerbaik === null || skor[0] > skorTerbaik[0] || (skor[0] === skorTerbaik[0] && skor[1] > skorTerbaik[1])) {
+      // Syarat 3: panah tidak berjalan berdempetan dengan panah yang sudah ada.
+      const impit = bagianBerimpit(sampel, a, b, r, titikPanah);
+      if (keState >= 0 && keRapian >= 0 && impit <= BATAS_IMPIT) return hasil;
+      // Urutan penilaian: menabrak state paling buruk, lalu panah berimpitan,
+      // lalu label bertumpuk.
+      const skor = [Math.min(0, keState), -Math.max(0, impit - BATAS_IMPIT), keRapian];
+      if (skorTerbaik === null || lebihBaik(skor, skorTerbaik)) {
         terbaik = hasil;
         skorTerbaik = skor;
       }
     }
     return terbaik;
+  }
+
+  // Membandingkan dua skor [s0, s1, ...]: yang pertama berbeda menentukan.
+  function lebihBaik(skor, lawan) {
+    for (let i = 0; i < skor.length; i++) {
+      if (skor[i] !== lawan[i]) return skor[i] > lawan[i];
+    }
+    return false;
+  }
+
+  /**
+   * Bagian (0 sampai 1) dari titik-titik panah yang terlalu dekat dengan panah
+   * yang sudah digambar. Titik di dekat lingkaran asal dan tujuan tidak
+   * dihitung, karena di sana panah memang wajar berkumpul.
+   */
+  function bagianBerimpit(sampel, a, b, r, titikPanah) {
+    const tengah = sampel.filter((t) => jarak(t, a) > r + 12 && jarak(t, b) > r + 12);
+    if (tengah.length === 0 || titikPanah.length === 0) return 0;
+    const dekat = tengah.filter((t) => titikPanah.some((p) => jarak(t, p) < JARAK_BEBAS_PANAH));
+    return dekat.length / tengah.length;
   }
 
   // ---------- loop δ(p, a) = p ----------

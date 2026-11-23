@@ -94,6 +94,14 @@ function adaPerubahan() {
   );
 }
 
+// Browser memberi peringatan bawaannya jika halaman ditutup atau dimuat ulang
+// selagi ada perubahan yang belum disimpan.
+window.addEventListener('beforeunload', (e) => {
+  if (!adaPerubahan()) return;
+  e.preventDefault();
+  e.returnValue = ''; // diperlukan sebagian browser
+});
+
 // Sebelum isi kotak definisi diganti dokumen lain: tanya dulu jika ada
 // perubahan yang belum disimpan. Mengembalikan true jika boleh diganti.
 function bolehGantiDokumen() {
@@ -103,8 +111,8 @@ function bolehGantiDokumen() {
 // Isi body permintaan ke /api/analisis dan /api/simulasi.
 function bodyDokumen() {
   return dokumen.format === 'fa'
-    ? { dfa: teksDfa.value, format: 'fa', type: dokumen.jenis }
-    : { dfa: teksDfa.value, format: 'dfa' };
+    ? { teks: teksDfa.value, format: 'fa', type: dokumen.jenis }
+    : { teks: teksDfa.value, format: 'dfa' };
 }
 
 // Menyelaraskan widget dan tombol ganti format dengan `dokumen`.
@@ -579,6 +587,22 @@ function tabelJejakNfa(r, adaEpsilon) {
   return tabel;
 }
 
+// Pohon komputasi NFA (tampilan tambahan): setiap kemungkinan jalan
+// ditelusuri terpisah. Disembunyikan dalam <details> supaya tabel jejak tetap
+// yang utama; jika pohonnya terlalu besar, hanya diberi keterangan.
+function bagianPohon(pohon, teksInput) {
+  const d = el('details', undefined, 'pohon');
+  d.appendChild(el('summary', 'Pohon komputasi (setiap kemungkinan jalan)'));
+  if (!pohon || pohon.terlaluBesar) {
+    d.appendChild(
+      el('p', `Pohon terlalu besar untuk ditampilkan (lebih dari ${pohon ? pohon.maksSimpul : 200} simpul). Coba input yang lebih pendek.`)
+    );
+  } else {
+    d.appendChild(gulung(el('pre', Animasi.teksPohon(pohon, teksInput).join('\n'))));
+  }
+  return d;
+}
+
 function tampilkanSimulasiNfa(data) {
   const r = data.result;
   const status = r.accepted
@@ -587,7 +611,13 @@ function tampilkanSimulasiNfa(data) {
   status.classList.add('status-hasil');
   umumkan(status.textContent.trim());
   const adaEpsilon = data.automaton.transitions.some((t) => t.symbol === 'ε' && t.to.length > 0);
-  ganti(hasil, status, el('h3', 'Jejak (himpunan state per langkah)'), gulung(tabelJejakNfa(r, adaEpsilon)));
+  ganti(
+    hasil,
+    status,
+    el('h3', 'Jejak (himpunan state per langkah)'),
+    gulung(tabelJejakNfa(r, adaEpsilon)),
+    bagianPohon(data.tree, input.value)
+  );
 
   // Sama dengan DFA: diagram digambar dari NFA yang baru disimulasikan, lalu
   // jejaknya diputar (beberapa state dan panah disorot sekaligus).
@@ -761,7 +791,7 @@ async function jalankanKonversi() {
       return ganti(hasilKonversi, kotak('galat', '✖', `Tidak dikonversi: bukan ${data.type} yang valid.`, data.errors));
     }
     if (arah === 'ke-dfa') {
-      tampilkanKeDfa(data.hasil, automataTerakhir?.start ?? '');
+      tampilkanKeDfa(data.hasil, data.automaton.start);
       umumkan(`Konversi NFA ke DFA selesai: ${data.hasil.table.length} state DFA. Tabel ada di bagian Konversi.`);
     } else {
       tampilkanKeNfa(data.hasil);
@@ -787,6 +817,9 @@ function bukaDariAlamat() {
     const format = Berkas.formatDariNama(nama);
     if (typeof teks !== 'string' || !format || Berkas.periksaBerkas({ teks, ukuran: teks.length })) return false;
     bukaDokumen(teks, format, nama);
+    // Hasil konversi hanya ada di tab ini (belum pernah disimpan), jadi
+    // dianggap berubah: menutup tab atau mengganti dokumen akan ditanyakan.
+    dokumenAman = { teks: null, format, jenis: dokumen.jenis };
     infoBerkasOk(`Dokumen baru dari konversi: ${namaBerkas.value} (${dokumen.jenis}). Simpan jika ingin disimpan.`);
     return true;
   } catch {

@@ -4,7 +4,7 @@
 const path = require('node:path');
 const { parseDfa, parseFa } = require('./parser');
 const { validateDfa, warnDfa, validateNfa, warnNfa } = require('./validator');
-const { simulate, simulateNfa } = require('./simulator');
+const { simulate, simulateNfa, pohonKomputasi } = require('./simulator');
 const { nfaToDfa, dfaToNfa } = require('./converter');
 
 /**
@@ -94,7 +94,8 @@ function periksaFa(teks, format, jenis) {
 /**
  * Seperti periksaFa, lalu (jika valid) jalankan simulasi DFA atau NFA.
  * `result` berbentuk HasilSimulasi (DFA, bagian 7) atau HasilSimulasiNfa
- * (NFA, bagian 8.6), atau null jika ada error.
+ * (NFA, bagian 8.6), atau null jika ada error. Untuk NFA ada juga `tree`,
+ * pohon komputasi (lihat pohonKomputasi); untuk DFA `tree` bernilai null.
  *
  * @param {string} teks isi file
  * @param {'fa'|'dfa'} format
@@ -104,9 +105,10 @@ function periksaFa(teks, format, jenis) {
  */
 function jalankanFa(teks, format, input, jenis) {
   const hasil = periksaFa(teks, format, jenis);
-  if (hasil.errors.length > 0) return { ...hasil, result: null };
-  const result = hasil.type === 'DFA' ? simulate(hasil.automaton, input) : simulateNfa(hasil.automaton, input);
-  return { ...hasil, result };
+  if (hasil.errors.length > 0) return { ...hasil, result: null, tree: null };
+  if (hasil.type === 'DFA') return { ...hasil, result: simulate(hasil.automaton, input), tree: null };
+  const result = simulateNfa(hasil.automaton, input); // memeriksa simbol input lebih dulu
+  return { ...hasil, result, tree: pohonKomputasi(hasil.automaton, input) };
 }
 
 /**
@@ -139,8 +141,8 @@ function analisisFa(teks, format, jenis) {
  * @param {'DFA'|'NFA'|undefined} jenis jenis dari luar teks (lihat parseFa, opsi.type)
  * @param {'ke-dfa'|'ke-nfa'} arah
  * @param {{ buangDeadState?: boolean }} [opsi] hanya untuk 'ke-nfa'
- * @returns {{ type: 'DFA'|'NFA', errors: string[], hasil: object|null }}
- *   hasil null jika automata belum valid (lihat errors)
+ * @returns {{ type: 'DFA'|'NFA', errors: string[], automaton: object, hasil: object|null }}
+ *   automaton = automata asal (hasil parse); hasil null jika automata belum valid (lihat errors)
  * @throws {Error} jika sintaks salah, arah tidak dikenal, jenis tidak sesuai
  *   arah, atau konversi gagal (mis. tabrakan nama)
  */
@@ -153,10 +155,10 @@ function konversiFa(teks, format, jenis, arah, opsi = {}) {
   if (arah === 'ke-nfa' && h.type !== 'DFA') {
     throw new Error('automata ini sudah NFA; konversi DFA -> NFA hanya untuk DFA');
   }
-  if (h.errors.length > 0) return { type: h.type, errors: h.errors, hasil: null };
+  if (h.errors.length > 0) return { type: h.type, errors: h.errors, automaton: h.automaton, hasil: null };
   const hasil =
     arah === 'ke-dfa' ? nfaToDfa(h.automaton) : dfaToNfa(h.automaton, { removeDeadStates: Boolean(opsi.buangDeadState) });
-  return { type: h.type, errors: [], hasil };
+  return { type: h.type, errors: [], automaton: h.automaton, hasil };
 }
 
 module.exports = { jalankan, analisis, formatDariNama, periksaFa, jalankanFa, analisisFa, konversiFa };

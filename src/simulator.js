@@ -228,4 +228,68 @@ function simulateNfa(nfa, input) {
   };
 }
 
-module.exports = { simulate, simulateNfa, epsilonClosure, move };
+// ---------- pohon komputasi NFA (tampilan tambahan, spesifikasi bagian 8.6) ----------
+
+const MAKS_SIMPUL_POHON = 200;
+
+/**
+ * Pohon komputasi: setiap kemungkinan jalan NFA ditelusuri terpisah, sehingga
+ * terlihat cabang mana yang diterima, ditolak, atau mati. Berbeda dengan jejak
+ * utama (himpunan state per langkah), jumlah simpulnya bisa tumbuh
+ * eksponensial, jadi hanya dibuat sampai `maksSimpul`; selebihnya
+ * `terlaluBesar` true dan `root` null.
+ *
+ * Simpul: { state, dibaca, lewat, anak, akhir }
+ *   - dibaca: banyak simbol input yang sudah dibaca saat berada di simpul ini
+ *   - lewat: simbol yang dipakai untuk sampai ke simpul ini ('ε' untuk
+ *     ε-transisi; null untuk akar)
+ *   - akhir: untuk simpul yang seluruh input sudah dibaca: 'diterima' jika
+ *     state ∈ F, 'ditolak' jika tidak. Untuk simpul yang input belum habis
+ *     tetapi tidak punya langkah lagi: 'mati'. Selain itu null.
+ * Langkah ε tidak boleh kembali ke state yang sudah dilewati lewat ε pada
+ * posisi input yang sama, supaya siklus ε tidak membuat pohon tak berujung.
+ *
+ * @param {import("./parser").Nfa} nfa NFA yang sudah lolos validator
+ * @param {string} input simbolnya sudah diperiksa (anggota Σ)
+ * @param {{ maksSimpul?: number }} [opsi]
+ * @returns {{ root: object|null, jumlahSimpul: number, terlaluBesar: boolean, maksSimpul: number }}
+ */
+function pohonKomputasi(nfa, input, opsi = {}) {
+  const maksSimpul = opsi.maksSimpul ?? MAKS_SIMPUL_POHON;
+  const delta = tabelDeltaNfa(nfa);
+  const F = new Set(nfa.accept);
+  const simbol = [...input];
+  let jumlahSimpul = 0;
+  let terlaluBesar = false;
+
+  function bangun(state, dibaca, lewat, sudahLewatEpsilon) {
+    jumlahSimpul++;
+    if (jumlahSimpul > maksSimpul) {
+      terlaluBesar = true;
+      return null;
+    }
+    const simpul = { state, dibaca, lewat, anak: [], akhir: null };
+    for (const q of urutkan(nfa, tujuanDelta(delta, state, EPSILON))) {
+      if (sudahLewatEpsilon.has(q)) continue;
+      const anak = bangun(q, dibaca, EPSILON, new Set([...sudahLewatEpsilon, q]));
+      if (terlaluBesar) return null;
+      simpul.anak.push(anak);
+    }
+    if (dibaca < simbol.length) {
+      for (const q of urutkan(nfa, tujuanDelta(delta, state, simbol[dibaca]))) {
+        const anak = bangun(q, dibaca + 1, simbol[dibaca], new Set([q]));
+        if (terlaluBesar) return null;
+        simpul.anak.push(anak);
+      }
+      if (simpul.anak.length === 0) simpul.akhir = 'mati';
+    } else {
+      simpul.akhir = F.has(state) ? 'diterima' : 'ditolak';
+    }
+    return simpul;
+  }
+
+  const root = bangun(nfa.start, 0, null, new Set([nfa.start]));
+  return { root: terlaluBesar ? null : root, jumlahSimpul: terlaluBesar ? null : jumlahSimpul, terlaluBesar, maksSimpul };
+}
+
+module.exports = { simulate, simulateNfa, epsilonClosure, move, pohonKomputasi };

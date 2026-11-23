@@ -19,7 +19,7 @@ CLI (`src/cli.js`) membaca file `.fa` dan `.dfa`; DFA atau NFA ditentukan oleh
 ekstensi dan baris `type:`:
 
 ```
-node src/cli.js <file.fa|file.dfa> [string-input]          # jalankan string (kosong = ε)
+node src/cli.js <file.fa|file.dfa> [string-input] [--pohon] # jalankan string (kosong = ε); --pohon: pohon komputasi NFA
 node src/cli.js ke-dfa <file.fa> [hasil.fa]                # NFA -> DFA, cetak tabel langkah
 node src/cli.js ke-nfa <file.fa|file.dfa> [hasil.fa] [--buang-dead-state]   # DFA -> NFA
 ```
@@ -46,7 +46,8 @@ di folder yang sama. File yang sudah ada tidak pernah ditimpa.
    disorot. Pakai tombol Awal, Mundur, Putar/Jeda, dan Maju untuk mengikuti
    per langkah. Untuk NFA, yang disorot adalah seluruh himpunan state aktif
    beserta panah δ dan ε-nya; tabel jejak memisahkan gabungan δ dan
-   ε-closure.
+   ε-closure, dan "Pohon komputasi" (bisa dibuka) menunjukkan setiap
+   kemungkinan jalan untuk input pendek.
 5. Jika diagram kurang rapi, ganti tata letak atau seret state ke tempat lain.
    Dengan keyboard: Tab ke state, lalu tombol panah (Shift + panah: geser halus).
 6. "Konversi NFA → DFA" (untuk NFA) menampilkan langkah konstruksi subset dan
@@ -117,12 +118,12 @@ jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
 | GET    | `/api/contoh`          | daftar file `.dfa` dan `.fa` di `contoh/`    |
 | GET    | `/api/contoh/<nama>`   | isi satu file contoh (teks)                  |
 | GET    | `/healthz`             | menjawab `ok` jika proses hidup (untuk diagnosis hosting) |
-| POST   | `/api/simulasi`        | body `{ "dfa": "...", "input": "0101", "format": "fa", "type": "NFA" }` |
-| POST   | `/api/analisis`        | body `{ "dfa": "...", "format": "fa", "type": "NFA" }`; periksa tanpa simulasi |
-| POST   | `/api/konversi`        | body `{ "dfa": "...", "arah": "ke-dfa", "format": "fa", "type": "NFA", "buangDeadState": false }` |
+| POST   | `/api/simulasi`        | body `{ "teks": "...", "input": "0101", "format": "fa", "type": "NFA" }` |
+| POST   | `/api/analisis`        | body `{ "teks": "...", "format": "fa", "type": "NFA" }`; periksa tanpa simulasi |
+| POST   | `/api/konversi`        | body `{ "teks": "...", "arah": "ke-dfa", "format": "fa", "type": "NFA", "buangDeadState": false }` |
 
-- `dfa`: isi file, boleh teks `.dfa` maupun `.fa`. Nama field ini dipertahankan
-  supaya klien lama tetap jalan.
+- `teks`: isi file, boleh teks `.dfa` maupun `.fa`. Nama lama `dfa` tetap
+  diterima supaya klien lama tetap jalan (jika keduanya ada, `teks` dipakai).
 - `format` (opsional): `"fa"` atau `"dfa"`, yaitu format file yang isinya
   dikirim. Menentukan cara membaca (spesifikasi bagian 8.1): `.fa` tanpa
   `type:` adalah NFA, `.dfa` selalu DFA. Bawaan `"dfa"`. Nilai lain dijawab `400`.
@@ -132,7 +133,7 @@ jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
   teks yang dikirim.
 
 `/api/simulasi` menjawab `200` dengan
-`{ type, errors, warnings, automaton, dfa, result }`:
+`{ type, errors, warnings, automaton, dfa, result, tree }`:
 
 - `type`: `"DFA"` atau `"NFA"`.
 - `errors`: pelanggaran aturan (DFA: V1-V6b, NFA: V1-V5); jika tidak kosong,
@@ -145,6 +146,8 @@ jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
   klien lama).
 - `result`: DFA `{ accepted, finalState, steps }` (spesifikasi bagian 7);
   NFA `{ accepted, start, steps, finalStates }` (spesifikasi bagian 8.6).
+- `tree`: pohon komputasi NFA `{ root, jumlahSimpul, terlaluBesar, maksSimpul }`
+  (spesifikasi bagian 8.6); `null` untuk DFA atau jika ada error.
 
 Sintaks yang salah atau simbol input di luar Σ dijawab `400` dengan
 `{ error: "..." }`. Untuk simbol di luar Σ ada field tambahan `position`
@@ -154,11 +157,12 @@ Sintaks yang salah atau simbol input di luar Σ dijawab `400` dengan
 selalu menjawab `200` dengan `{ syntaxError, type, errors, warnings, automaton, dfa }`:
 sintaks yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris)
 dan `type`, `automaton`, `dfa` menjadi `null`. Body yang bukan JSON atau tanpa
-field `dfa` dijawab `400`.
+field `teks`/`dfa` dijawab `400`.
 
 `/api/konversi` mengonversi NFA -> DFA (`"arah": "ke-dfa"`, konstruksi subset)
 atau DFA -> NFA (`"arah": "ke-nfa"`, boleh dengan `"buangDeadState": true`).
-Menjawab `200` dengan `{ type, errors, hasil }`; `hasil` adalah hasil
+Menjawab `200` dengan `{ type, errors, automaton, hasil }` (`automaton` adalah
+automata asal); `hasil` adalah hasil
 `nfaToDfa` atau `dfaToNfa` dari `src/converter.js` (teks `.fa`, objek automata,
 dan tabel langkah/pemetaan), atau `null` jika automata belum valid. Sintaks
 salah, arah tidak dikenal, jenis yang tidak sesuai arah, atau konversi yang

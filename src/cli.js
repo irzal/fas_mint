@@ -2,9 +2,10 @@
 // Antarmuka baris perintah.
 //
 // Pemakaian:
-//   node src/cli.js <file.fa|file.dfa> [string-input]
+//   node src/cli.js <file.fa|file.dfa> [string-input] [--pohon]
 //       jalankan string input (kosong = ε); DFA atau NFA ditentukan oleh
-//       ekstensi file dan baris type: (spesifikasi bagian 8.1)
+//       ekstensi file dan baris type: (spesifikasi bagian 8.1). --pohon
+//       (hanya NFA) mencetak juga pohon komputasi.
 //   node src/cli.js ke-dfa <file.fa> [hasil.fa]
 //       konversi NFA -> DFA (konstruksi subset, bagian 9.1)
 //   node src/cli.js ke-nfa <file.fa|file.dfa> [hasil.fa] [--buang-dead-state]
@@ -15,12 +16,13 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { formatDariNama, periksaFa, jalankanFa } = require('./fas');
-const { nfaToDfa, dfaToNfa } = require('./converter');
+const { formatDariNama, periksaFa, jalankanFa, konversiFa } = require('./fas');
+// teksPohon dipakai bersama halaman web (fungsi murni, tanpa DOM).
+const { teksPohon } = require('../public/animasi');
 
 const PEMAKAIAN = [
   'Pemakaian:',
-  '  node src/cli.js <file.fa|file.dfa> [string-input]',
+  '  node src/cli.js <file.fa|file.dfa> [string-input] [--pohon]',
   '  node src/cli.js ke-dfa <file.fa> [hasil.fa]',
   '  node src/cli.js ke-nfa <file.fa|file.dfa> [hasil.fa] [--buang-dead-state]',
 ];
@@ -150,7 +152,7 @@ function namaHasilBawaan(file, akhiran) {
 
 // ---------- perintah ----------
 
-function perintahSimulasi(file, input, out, err) {
+function perintahSimulasi(file, input, cetakPohon, out, err) {
   const baca = bacaDanPeriksa(file, out, err);
   if (!baca) return 1;
   const { hasil } = baca;
@@ -161,8 +163,9 @@ function perintahSimulasi(file, input, out, err) {
   for (const w of hasil.warnings) err('peringatan: ' + w);
 
   let r;
+  let pohon;
   try {
-    r = jalankanFa(baca.teks, baca.format, input).result;
+    ({ result: r, tree: pohon } = jalankanFa(baca.teks, baca.format, input));
   } catch (e) {
     err(e.message);
     if (e.position) {
@@ -192,35 +195,56 @@ function perintahSimulasi(file, input, out, err) {
       ? `Hasil: DITERIMA (himpunan terakhir ${himpunan(r.finalStates)} memuat state akhir ${akhir.join(', ')})`
       : `Hasil: DITOLAK (himpunan terakhir ${himpunan(r.finalStates)} tidak memuat state akhir)`
   );
+  if (cetakPohon) {
+    out('Pohon komputasi:');
+    if (pohon.terlaluBesar) out(`  (terlalu besar: lebih dari ${pohon.maksSimpul} simpul; coba input yang lebih pendek)`);
+    else for (const b of teksPohon(pohon, input)) out('  ' + b);
+  }
   return 0;
+}
+
+// Membaca file lalu menjalankan konversiFa (pemeriksaan dan konversi yang sama
+// dengan halaman web). Mengembalikan hasil konversi, atau null (setelah menulis
+// pesan) jika file tidak bisa dibaca, sintaks salah, jenis tidak sesuai arah,
+// automata belum valid, atau konversi gagal.
+function konversiDariFile(file, arah, opsi, out, err) {
+  const format = formatDariNama(file);
+  if (!format) {
+    err(`file '${file}' harus berekstensi .fa atau .dfa`);
+    return null;
+  }
+  let teks;
+  try {
+    teks = fs.readFileSync(file, 'utf8');
+  } catch (e) {
+    err(`tidak bisa membaca file '${file}': ${e.code || e.message}`);
+    return null;
+  }
+  let k;
+  try {
+    k = konversiFa(teks, format, undefined, arah, opsi);
+  } catch (e) {
+    // Jenis yang tidak sesuai arah disebut bersama nama filenya.
+    err(e.message.startsWith('automata ini sudah') ? `file '${file}': ${e.message}` : e.message);
+    return null;
+  }
+  if (k.errors.length > 0) {
+    tulisError(k, out);
+    return null;
+  }
+  return k;
 }
 
 function perintahKeDfa(file, fileHasil, out, err) {
   const tujuan = fileHasil || namaHasilBawaan(file, 'dfa');
   if (hasilSudahAda(tujuan, err)) return 1;
-  const baca = bacaDanPeriksa(file, out, err);
-  if (!baca) return 1;
-  const { hasil } = baca;
-  if (hasil.type !== 'NFA') {
-    err(`file '${file}' sudah DFA; konversi NFA -> DFA hanya untuk NFA`);
-    return 1;
-  }
-  if (hasil.errors.length > 0) {
-    tulisError(hasil, out);
-    return 1;
-  }
-
-  let k;
-  try {
-    k = nfaToDfa(hasil.automaton);
-  } catch (e) {
-    err(e.message); // mis. tabrakan nama
-    return 1;
-  }
+  const konversi = konversiDariFile(file, 'ke-dfa', {}, out, err);
+  if (!konversi) return 1;
+  const k = konversi.hasil;
 
   out('Konversi NFA -> DFA (konstruksi subset)');
   out('');
-  out(`Langkah 0: state awal DFA = ε-closure({${hasil.automaton.start}}) = ${himpunan(k.start.states)} -> ${k.start.name}`);
+  out(`Langkah 0: state awal DFA = ε-closure({${konversi.automaton.start}}) = ${himpunan(k.start.states)} -> ${k.start.name}`);
   const kepala = k.usesEpsilon
     ? ['No', 'Himpunan', 'Simbol', 'Gabungan δ', 'ε-closure', 'Hasil', 'Keterangan']
     : ['No', 'Himpunan', 'Simbol', 'Gabungan δ', 'Hasil', 'Keterangan'];
@@ -233,7 +257,7 @@ function perintahKeDfa(file, fileHasil, out, err) {
   if (baris.length > 0) for (const b of tabelTeks(kepala, baris)) out(b);
   out('');
   out('Tabel transisi DFA (→ state awal, * state akhir):');
-  const alfabet = hasil.automaton.alphabet;
+  const alfabet = k.dfa.alphabet;
   const ringkas = k.table.map((r) => [
     (r.isStart ? '→' : ' ') + (r.isAccept ? '*' : ' ') + ' ' + r.name,
     ...r.transitions.map((t) => t.toName),
@@ -246,25 +270,9 @@ function perintahKeDfa(file, fileHasil, out, err) {
 function perintahKeNfa(file, fileHasil, buangDead, out, err) {
   const tujuan = fileHasil || namaHasilBawaan(file, 'nfa');
   if (hasilSudahAda(tujuan, err)) return 1;
-  const baca = bacaDanPeriksa(file, out, err);
-  if (!baca) return 1;
-  const { hasil } = baca;
-  if (hasil.type !== 'DFA') {
-    err(`file '${file}' sudah NFA; konversi DFA -> NFA hanya untuk DFA`);
-    return 1;
-  }
-  if (hasil.errors.length > 0) {
-    tulisError(hasil, out);
-    return 1;
-  }
-
-  let k;
-  try {
-    k = dfaToNfa(hasil.automaton, { removeDeadStates: buangDead });
-  } catch (e) {
-    err(e.message); // mis. nama state .dfa yang tidak sah di .fa
-    return 1;
-  }
+  const konversi = konversiDariFile(file, 'ke-nfa', { buangDeadState: buangDead }, out, err);
+  if (!konversi) return 1;
+  const k = konversi.hasil;
 
   out('Konversi DFA -> NFA: δ_N(q, a) = {δ_D(q, a)}');
   out('');
@@ -303,12 +311,14 @@ function main(argv, io = {}) {
       : perintahKeNfa(file, fileHasil, buangDead, out, err);
   }
 
-  if (!pertama) {
+  const cetakPohon = sisa.includes('--pohon');
+  const bebas = sisa.filter((a) => a !== '--pohon');
+  if (!pertama || pertama.startsWith('--') || bebas.length > 1 || bebas.some((a) => a.startsWith('--'))) {
     for (const b of PEMAKAIAN) out(b);
     return 1;
   }
-  const [input = ''] = sisa;
-  return perintahSimulasi(pertama, input, out, err);
+  const [input = ''] = bebas;
+  return perintahSimulasi(pertama, input, cetakPohon, out, err);
 }
 
 if (require.main === module) {

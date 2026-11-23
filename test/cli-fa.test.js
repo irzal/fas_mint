@@ -245,3 +245,17 @@ test('argumen perintah konversi yang salah menampilkan cara pakai', () => {
 test('tabelTeks: kolom rata menurut karakter Unicode', () => {
   assert.deepEqual(tabelTeks(['A', 'δ'], [['∅', 'xyz']]), ['  A | δ', '  --+----', '  ∅ | xyz']);
 });
+
+test('ke-dfa dengan ε: langkah 0 menyebut nama state awal NFA', () => {
+  denganFolder({ 'e.fa': NFA_EPS }, (dir) => {
+    const { out } = jalankanCli(['ke-dfa', path.join(dir, 'e.fa'), path.join(dir, 'h.fa')]);
+    assert.equal(out[2], 'Langkah 0: state awal DFA = ε-closure({q0}) = {q0, q1} -> [q0,q1]');
+  });
+});
+
+test('ke-dfa/ke-nfa: jenis tidak sesuai arah disebut bersama nama file', () => {
+  denganFolder({ 'a.fa': NFA_01 }, (dir) => {
+    const f = path.join(dir, 'a.fa');
+    assert.equal(jalankanCli(['ke-nfa', f]).err[0], `file '${f}': automata ini sudah NFA; konversi DFA -> NFA hanya untuk DFA`);
+  });
+});

@@ -93,7 +93,7 @@ test('simulasi menjawab 400 dengan pesan parser untuk file .dfa yang salah sinta
 test('simulasi menolak body tanpa field teks yang diminta', async () => {
   const res = await fetch(alamat + '/api/simulasi', { method: 'POST', body: JSON.stringify({ dfa: 'x' }) });
   assert.equal(res.status, 400);
-  assert.match((await res.json()).error, /"dfa" dan "input"/);
+  assert.match((await res.json()).error, /"input"/);
   const res2 = await fetch(alamat + '/api/simulasi', { method: 'POST', body: 'null' });
   assert.equal(res2.status, 400);
 });

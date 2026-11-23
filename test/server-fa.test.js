@@ -225,3 +225,31 @@ test('konversi ke-nfa: nama state .dfa yang tidak sah di .fa dijawab 400', async
   assert.equal(status, 400);
   assert.match(data.error, /konversi gagal: nama state 'a,b'/);
 });
+
+test('konversi: jawaban memuat automata asal', async () => {
+  const { data } = await post('/api/konversi', { dfa: await contoh('nfa-epsilon-a-lalu-b.fa'), format: 'fa', arah: 'ke-dfa' });
+  assert.equal(data.automaton.start, 'baca_a');
+});
+
+// ---------- field teks (nama netral untuk isi file) ----------
+
+test('field teks diterima; dfa tetap diterima; teks didahulukan jika keduanya ada', async () => {
+  const isi = await contoh('nfa-berakhiran-01.fa');
+  assert.equal((await post('/api/analisis', { teks: isi, format: 'fa' })).data.type, 'NFA');
+  assert.equal((await post('/api/analisis', { dfa: isi, format: 'fa' })).data.type, 'NFA');
+  const keduanya = await post('/api/simulasi', { teks: isi, dfa: 'rusak', format: 'fa', input: '01' });
+  assert.equal(keduanya.data.result.accepted, true);
+  assert.equal((await post('/api/konversi', { teks: isi, format: 'fa', arah: 'ke-dfa' })).status, 200);
+});
+
+test('tanpa teks maupun dfa, atau body bukan objek: 400 dengan pesan jelas', async () => {
+  assert.match((await post('/api/analisis', { format: 'fa' })).data.error, /"teks" \(atau "dfa"\) wajib berupa teks/);
+  assert.match((await post('/api/analisis', [1, 2])).data.error, /body harus berupa objek JSON/);
+  assert.match((await post('/api/simulasi', null)).data.error, /body harus berupa objek JSON/);
+});
+
+test('simulasi NFA: jawaban memuat pohon komputasi (tree)', async () => {
+  const { data } = await post('/api/simulasi', { teks: await contoh('nfa-berakhiran-01.fa'), format: 'fa', input: '01' });
+  assert.equal(data.tree.terlaluBesar, false);
+  assert.equal(data.tree.root.state, 'q0');
+});
