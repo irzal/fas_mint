@@ -48,7 +48,7 @@ digulung ke samping.
 
 ```
 fas/
-├── contoh/              file .dfa contoh (yang diawali tidak-valid- sengaja salah)
+├── contoh/              file .dfa dan .fa contoh (yang diawali tidak-valid- sengaja salah)
 ├── src/
 │   ├── parser.js        teks .dfa/.fa -> objek (Q, Σ, δ, q₀, F)
 │   ├── validator.js     cek aturan V1-V6b (DFA) dan V1-V5 (NFA)
@@ -100,29 +100,42 @@ jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
 
 | Method | Path                   | Keterangan                                   |
 |--------|------------------------|----------------------------------------------|
-| GET    | `/api/contoh`          | daftar file di `contoh/`                     |
+| GET    | `/api/contoh`          | daftar file `.dfa` dan `.fa` di `contoh/`    |
 | GET    | `/api/contoh/<nama>`   | isi satu file contoh (teks)                  |
 | GET    | `/healthz`             | menjawab `ok` jika proses hidup (untuk diagnosis hosting) |
-| POST   | `/api/simulasi`        | body `{ "dfa": "...", "input": "0101" }`     |
-| POST   | `/api/analisis`        | body `{ "dfa": "..." }`; periksa tanpa simulasi |
+| POST   | `/api/simulasi`        | body `{ "dfa": "...", "input": "0101", "format": "fa" }` |
+| POST   | `/api/analisis`        | body `{ "dfa": "...", "format": "fa" }`; periksa tanpa simulasi |
+
+- `dfa`: isi file, boleh teks `.dfa` maupun `.fa`. Nama field ini dipertahankan
+  supaya klien lama tetap jalan.
+- `format` (opsional): `"fa"` atau `"dfa"`, yaitu format file yang isinya
+  dikirim. Menentukan cara membaca (spesifikasi bagian 8.1): `.fa` tanpa
+  `type:` adalah NFA, `.dfa` selalu DFA. Bawaan `"dfa"`. Nilai lain dijawab `400`.
 
 `/api/simulasi` menjawab `200` dengan
-`{ errors, warnings, dfa, result }`:
+`{ type, errors, warnings, automaton, dfa, result }`:
 
-- `errors`: pelanggaran aturan DFA (V1-V6b); jika tidak kosong, `result` adalah `null`.
-- `warnings`: peringatan yang tidak menghentikan simulasi (mis. state tak terjangkau).
-- `dfa`: hasil parse (`states`, `alphabet`, `start`, `accept`, `transitions`),
-  selalu ada, bahan untuk menggambar graf.
-- `result`: `{ accepted, finalState, steps }`.
+- `type`: `"DFA"` atau `"NFA"`.
+- `errors`: pelanggaran aturan (DFA: V1-V6b, NFA: V1-V5); jika tidak kosong,
+  `result` adalah `null`.
+- `warnings`: peringatan yang tidak menghentikan simulasi (mis. state tak
+  terjangkau, baris `type:` yang diabaikan di `.dfa`, tujuan ganda di NFA).
+- `automaton`: hasil parse (`states`, `alphabet`, `start`, `accept`,
+  `transitions`), selalu ada, bahan untuk menggambar graf. Pada NFA, `to` di
+  setiap transisi berupa daftar state. `dfa` berisi hal yang sama (untuk
+  klien lama).
+- `result`: DFA `{ accepted, finalState, steps }` (spesifikasi bagian 7);
+  NFA `{ accepted, start, steps, finalStates }` (spesifikasi bagian 8.6).
 
-Sintaks `.dfa` yang salah atau simbol input di luar Σ dijawab `400` dengan
+Sintaks yang salah atau simbol input di luar Σ dijawab `400` dengan
 `{ error: "..." }`. Untuk simbol di luar Σ ada field tambahan `position`
 (posisi simbol itu, mulai dari 1).
 
 `/api/analisis` dipakai halaman untuk pemeriksaan langsung saat mengetik. Ia
-selalu menjawab `200` dengan `{ syntaxError, errors, warnings, dfa }`: sintaks
-yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
-`dfa` menjadi `null`. Body yang bukan JSON atau tanpa field `dfa` dijawab `400`.
+selalu menjawab `200` dengan `{ syntaxError, type, errors, warnings, automaton, dfa }`:
+sintaks yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris)
+dan `type`, `automaton`, `dfa` menjadi `null`. Body yang bukan JSON atau tanpa
+field `dfa` dijawab `400`.
 
 ## Rencana tahap 5 (web)
 
@@ -153,7 +166,7 @@ CLI dan web.
 | 6d | Konversi NFA -> DFA (konstruksi subset, hanya himpunan terjangkau): nama `[q0,q1]` dan `[]`, deteksi tabrakan nama, tabel langkah demi langkah dan tabel transisi subset. Fungsi `nfaToDfa` di `src/converter.js`, hasil berupa teks `.fa` (`type: DFA`), objek DFA, dan kedua tabel | selesai (tes `test/converter-nfa-dfa.test.js`) |
 | 6e | Konversi DFA -> NFA: tujuan ditulis `{p}`, pilihan buang dead state (state awal tidak pernah dibuang), tabel pemetaan. Fungsi `dfaToNfa` dan `findDeadStates` di `src/converter.js`; nama/simbol `.dfa` yang tidak sah di `.fa` menghentikan konversi dengan pesan | selesai (tes `test/converter-dfa-nfa.test.js`) |
 | 6f | CLI: membaca `.fa` dan `.dfa`, jejak NFA, perintah konversi kedua arah (mencetak tabel dan menulis file hasil `.fa`). Perintah `ke-dfa` dan `ke-nfa`; fungsi bersama `periksaFa`/`jalankanFa` di `src/fas.js` | selesai (tes `test/cli-fa.test.js`) |
-| 6g | Contoh `.fa` (NFA, NFA dengan ε, DFA ber-`type: DFA`, contoh tidak valid) dan server/API untuk `.fa` (daftar contoh, analisis, simulasi) | belum |
+| 6g | Contoh `.fa` (NFA, NFA dengan ε, DFA ber-`type: DFA`, contoh tidak valid) dan server/API untuk `.fa` (daftar contoh, analisis, simulasi). Field `format` di API; halaman web sementara hanya menampilkan contoh `.dfa` sampai 6h-6i | selesai (tes `test/server-fa.test.js`, `test/contoh-fa.test.js`; halaman lama dicoba di Chromium) |
 | 6h | Web, dokumen: widget jenis automata (terkunci untuk `.dfa`), baris `type:` disembunyikan dari kotak definisi, menu "DFA baru"/"NFA baru", dokumen awal NFA satu state, Simpan sesuai format dokumen, menu "Jadikan .fa (type: DFA)"/"Jadikan .dfa" | belum |
 | 6i | Web, NFA: diagram dengan ε-transisi, tabel jejak NFA (kolom hasil δ dan ε-closure terpisah), animasi yang menyorot beberapa state dan panah sekaligus | belum |
 | 6j | Web, konversi: menu konversi kedua arah, tabel langkah/pemetaan, tampilan hasil konversi (masih perlu diputuskan, spesifikasi bagian 13) | belum |

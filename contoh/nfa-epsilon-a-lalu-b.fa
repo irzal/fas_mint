@@ -1,0 +1,11 @@
+type: NFA
+# NFA dengan ε-transisi: string a*b* (nol atau lebih a, lalu nol atau lebih b).
+# ε-transisi dari 'baca_a' ke 'baca_b' berarti "selesai membaca a" tanpa membaca simbol.
+states: baca_a baca_b
+alphabet: a b
+start: baca_a
+accept: baca_b
+
+baca_a a -> baca_a
+baca_a ε -> baca_b
+baca_b b -> baca_b

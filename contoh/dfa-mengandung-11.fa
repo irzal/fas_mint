@@ -1,0 +1,14 @@
+type: DFA
+# DFA (format .fa dengan type: DFA): string biner yang memuat substring 11.
+# Karena type: DFA, file ini diperiksa dengan aturan DFA (V1-V6b), sama dengan file .dfa.
+states: awal satu ketemu
+alphabet: 0 1
+start: awal
+accept: ketemu
+
+awal 0 -> awal
+awal 1 -> satu
+satu 0 -> awal
+satu 1 -> ketemu
+ketemu 0 -> ketemu    # sekali ketemu, tetap diterima
+ketemu 1 -> ketemu

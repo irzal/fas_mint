@@ -1,0 +1,14 @@
+type: NFA
+# SENGAJA SALAH (spesifikasi bagian 8.5): melanggar V1, V4, dan V5.
+# Validator akan melaporkan:
+#   state awal 'mulai' tidak ada di Q
+#   simbol 'c' tidak ada di Σ
+#   state 'q9' tidak ada di Q
+states: q0 q1
+alphabet: a b
+start: mulai
+accept: q1
+
+q0 a -> {q0, q1}
+q0 c -> q1
+q1 b -> {q1, q9}

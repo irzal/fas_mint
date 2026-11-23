@@ -1,0 +1,15 @@
+type: NFA
+# NFA: string biner yang simbol ketiga dari belakangnya 1.
+# NFA ini cukup 4 state, tetapi DFA hasil konstruksi subset butuh 8 state:
+# contoh klasik bahwa NFA bisa jauh lebih ringkas daripada DFA.
+states: q0 q1 q2 q3
+alphabet: 0 1
+start: q0
+accept: q3
+
+q0 0 -> q0
+q0 1 -> {q0, q1}    # menebak: 1 ini simbol ketiga dari belakang
+q1 0 -> q2
+q1 1 -> q2
+q2 0 -> q3
+q2 1 -> q3

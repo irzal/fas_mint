@@ -6,7 +6,7 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { jalankan, analisis } = require('../fas');
+const { jalankanFa, analisisFa } = require('../fas');
 
 const FOLDER_PUBLIC = path.join(__dirname, '..', '..', 'public');
 const FOLDER_CONTOH = path.join(__dirname, '..', '..', 'contoh');
@@ -51,14 +51,17 @@ function bacaBody(req) {
   });
 }
 
-// GET /api/contoh  -> daftar nama file .dfa di folder contoh/
+// File contoh yang disajikan: .dfa (format lama) dan .fa (tahap 6).
+const adalahFileContoh = (f) => f.endsWith('.dfa') || f.endsWith('.fa');
+
+// GET /api/contoh  -> daftar nama file .dfa dan .fa di folder contoh/
 // Jika folder tidak bisa dibaca (mis. tidak ikut terdeploy), jawab 500 dengan pesan
 // yang jelas, bukan membiarkan error itu menghentikan server. Alamat folder di server
 // hanya ditulis ke log, tidak dikirim ke pengguna.
 function daftarContoh(res, folder) {
   let nama;
   try {
-    nama = fs.readdirSync(folder).filter((f) => f.endsWith('.dfa')).sort();
+    nama = fs.readdirSync(folder).filter(adalahFileContoh).sort();
   } catch (err) {
     console.error(`gagal membaca folder contoh (${folder}): ${err.message}`);
     return kirimJson(res, 500, { error: 'folder contoh tidak bisa dibaca di server' });
@@ -66,13 +69,13 @@ function daftarContoh(res, folder) {
   kirimJson(res, 200, { contoh: nama });
 }
 
-// GET /api/contoh/<nama>.dfa  -> isi file contoh sebagai teks
+// GET /api/contoh/<nama>.dfa atau <nama>.fa  -> isi file contoh sebagai teks
 function ambilContoh(res, nama, folder) {
   // path.basename mencegah akses ke luar folder contoh/ (misalnya "../")
   const file = path.join(folder, path.basename(nama));
   let isi;
   try {
-    if (!file.endsWith('.dfa') || !fs.existsSync(file)) throw Object.assign(new Error('tidak ada'), { code: 'ENOENT' });
+    if (!adalahFileContoh(file) || !fs.existsSync(file)) throw Object.assign(new Error('tidak ada'), { code: 'ENOENT' });
     isi = fs.readFileSync(file, 'utf8');
   } catch (err) {
     if (err.code !== 'ENOENT') console.error(`gagal membaca contoh (${file}): ${err.message}`);
@@ -113,27 +116,47 @@ async function bacaJson(req, res, ...fieldTeks) {
   return data;
 }
 
-// POST /api/simulasi  body: { "dfa": "<isi file .dfa>", "input": "0101" }
-// 200: { errors, warnings, dfa, result }
+// Field "format" (opsional): "fa" atau "dfa", yaitu format file yang isinya
+// dikirim di field "dfa" (spesifikasi bagian 8.1). Bawaan "dfa", supaya klien
+// lama yang tidak mengirim format tetap berperilaku sama. Nama field "dfa"
+// dipertahankan untuk klien lama; isinya boleh teks .dfa maupun .fa.
+// Jika format tidak sah, langsung menjawab 400 dan mengembalikan null.
+function formatDariBody(data, res) {
+  if (data.format === undefined) return 'dfa';
+  if (data.format === 'fa' || data.format === 'dfa') return data.format;
+  kirimJson(res, 400, { error: 'field "format" harus "fa" atau "dfa"' });
+  return null;
+}
+
+// POST /api/simulasi  body: { "dfa": "<isi file>", "input": "0101", "format"?: "fa"|"dfa" }
+// 200: { type, errors, warnings, automaton, dfa, result }
+//      (dfa = automaton, dipertahankan untuk klien lama; result berbentuk jejak
+//      DFA atau NFA sesuai type, atau null jika ada error)
 // 400: { error, position? }  (sintaks salah, atau simbol input di luar Σ; position
 //      = posisi simbol itu, mulai dari 1)
 async function simulasi(req, res) {
   const data = await bacaJson(req, res, 'dfa', 'input');
   if (!data) return;
+  const format = formatDariBody(data, res);
+  if (!format) return;
   try {
-    kirimJson(res, 200, jalankan(data.dfa, data.input));
+    const h = jalankanFa(data.dfa, format, data.input);
+    kirimJson(res, 200, { ...h, dfa: h.automaton });
   } catch (err) {
     kirimJson(res, 400, { error: err.message, position: err.position });
   }
 }
 
-// POST /api/analisis  body: { "dfa": "<isi file .dfa>" }
+// POST /api/analisis  body: { "dfa": "<isi file>", "format"?: "fa"|"dfa" }
 // Pemeriksaan tanpa simulasi (untuk pratinjau saat mengetik). Selalu 200:
-// { syntaxError, errors, warnings, dfa }
+// { syntaxError, type, errors, warnings, automaton, dfa }
 async function analisisDfa(req, res) {
   const data = await bacaJson(req, res, 'dfa');
   if (!data) return;
-  kirimJson(res, 200, analisis(data.dfa));
+  const format = formatDariBody(data, res);
+  if (!format) return;
+  const h = analisisFa(data.dfa, format);
+  kirimJson(res, 200, { ...h, dfa: h.automaton });
 }
 
 function fileStatis(res, urlPath) {
@@ -148,7 +171,7 @@ function fileStatis(res, urlPath) {
   res.end(fs.readFileSync(file));
 }
 
-// opsi.folderContoh: folder berisi file .dfa contoh (bawaan: contoh/ di akar proyek).
+// opsi.folderContoh: folder berisi file .dfa/.fa contoh (bawaan: contoh/ di akar proyek).
 // opsi.catatan: fungsi (teks) => void untuk mencatat tiap permintaan (bawaan: tidak
 //   mencatat, supaya keluaran tes tetap bersih). Hanya metode, alamat tanpa query,
 //   kode jawaban, dan lama proses yang dicatat; isi permintaan (teks DFA) tidak pernah.

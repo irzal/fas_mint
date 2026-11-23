@@ -506,6 +506,9 @@ async function muatDaftarContoh() {
     const res = await fetch('/api/contoh');
     if (!res.ok) throw new Error(`server menjawab ${res.status}`);
     const data = await res.json();
+    // Sementara (sampai sub tahap 6h-6i): halaman ini baru bisa menggambar dan
+    // menjalankan DFA dari file .dfa, jadi contoh .fa (NFA) belum ditampilkan.
+    data.contoh = data.contoh.filter((nama) => nama.endsWith('.dfa'));
     if (data.contoh.length === 0) {
       return infoBerkasGalat('Daftar contoh kosong: tidak ada file .dfa di folder contoh server.');
     }

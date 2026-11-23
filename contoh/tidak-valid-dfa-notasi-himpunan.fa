@@ -1,0 +1,14 @@
+type: DFA
+# SENGAJA SALAH (spesifikasi bagian 8.4 butir 5): DFA tidak boleh memakai
+# notasi himpunan, karena DFA punya tepat satu tujuan per pasangan (V6).
+# Parser akan melaporkan: baris 13: notasi himpunan '{q0, q1}' hanya untuk NFA
+states: q0 q1
+alphabet: 0 1
+start: q0
+accept: q1
+
+q0 0 -> q0
+q0 1 -> q1
+q1 0 -> q1
+q0 0 -> {q0, q1}
+q1 1 -> q1

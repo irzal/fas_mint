@@ -106,4 +106,22 @@ function jalankanFa(teks, format, input) {
   return { ...hasil, result };
 }
 
-module.exports = { jalankan, analisis, formatDariNama, periksaFa, jalankanFa };
+/**
+ * Seperti periksaFa, tetapi tidak melempar error: kesalahan sintaks
+ * dilaporkan di `syntaxError`, dan `type`/`automaton` bernilai null.
+ * Dipakai untuk pemeriksaan langsung saat mengetik di halaman web.
+ *
+ * @param {string} teks isi file
+ * @param {'fa'|'dfa'} format
+ * @returns {{ syntaxError: string|null, type: 'DFA'|'NFA'|null, errors: string[],
+ *   warnings: string[], automaton: object|null }}
+ */
+function analisisFa(teks, format) {
+  try {
+    return { syntaxError: null, ...periksaFa(teks, format) };
+  } catch (err) {
+    return { syntaxError: err.message, type: null, errors: [], warnings: [], automaton: null };
+  }
+}
+
+module.exports = { jalankan, analisis, formatDariNama, periksaFa, jalankanFa, analisisFa };
