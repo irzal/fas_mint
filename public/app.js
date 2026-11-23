@@ -17,6 +17,11 @@ const widgetJenis = document.getElementById('widget-jenis');
 const keteranganJenis = document.getElementById('keterangan-jenis');
 const tombolJadikanFa = document.getElementById('tombol-jadikan-fa');
 const tombolJadikanDfa = document.getElementById('tombol-jadikan-dfa');
+const tombolKonversi = document.getElementById('tombol-konversi');
+const labelBuangDead = document.getElementById('label-buang-dead');
+const centangBuangDead = document.getElementById('buang-dead-state');
+const bagianKonversi = document.getElementById('bagian-konversi');
+const hasilKonversi = document.getElementById('hasil-konversi');
 
 // ---------- pembantu DOM ----------
 
@@ -81,6 +86,15 @@ function perbaruiWidget() {
       : `Dokumen .fa. Saat disimpan, baris "type: ${dokumen.jenis}" ditulis di baris pertama file.`;
   tombolJadikanFa.hidden = dokumen.format !== 'dfa';
   tombolJadikanDfa.hidden = !(dokumen.format === 'fa' && dokumen.jenis === 'DFA');
+  // Konversi sesuai jenis: NFA -> DFA untuk NFA, DFA -> NFA untuk DFA.
+  tombolKonversi.textContent = dokumen.jenis === 'NFA' ? 'Konversi NFA → DFA' : 'Konversi DFA → NFA';
+  labelBuangDead.hidden = dokumen.jenis !== 'DFA';
+}
+
+// Definisi atau jenis berubah: hasil simulasi dan tabel konversi tidak berlaku lagi.
+function definisiBerubah() {
+  hasilKedaluwarsa();
+  konversiKedaluwarsa();
 }
 
 // Membuka teks sebagai dokumen baru (dari file, contoh, atau menu baru).
@@ -98,7 +112,7 @@ function bukaDokumen(teks, format, nama, jenisBaru) {
   teksDfa.value = teks;
   namaBerkas.value = Berkas.namaBerkas(nama, format);
   perbaruiWidget();
-  hasilKedaluwarsa();
+  definisiBerubah();
   periksa();
 }
 
@@ -112,7 +126,7 @@ widgetJenis.addEventListener('change', (e) => {
   if (e.target.name !== 'jenis' || dokumen.format !== 'fa') return;
   dokumen.jenis = e.target.value;
   perbaruiWidget();
-  hasilKedaluwarsa();
+  definisiBerubah();
   periksa();
 });
 
@@ -128,7 +142,7 @@ tombolJadikanFa.addEventListener('click', () => {
   dokumen.jenis = 'DFA';
   namaBerkas.value = Berkas.namaBerkas(namaBerkas.value, 'fa');
   perbaruiWidget();
-  hasilKedaluwarsa();
+  definisiBerubah();
   periksa();
   infoBerkasOk(
     `Sekarang dokumen .fa dengan jenis DFA (${namaBerkas.value}).` +
@@ -140,7 +154,7 @@ tombolJadikanDfa.addEventListener('click', () => {
   dokumen.jenis = 'DFA';
   namaBerkas.value = Berkas.namaBerkas(namaBerkas.value, 'dfa');
   perbaruiWidget();
-  hasilKedaluwarsa();
+  definisiBerubah();
   periksa();
   infoBerkasOk(`Sekarang dokumen .dfa (${namaBerkas.value}).`);
 });
@@ -353,7 +367,7 @@ pilihTataLetak.addEventListener('change', () => {
   else gambarDiagram();
 });
 
-// ---------- animasi jejak (sub tahap 5d) ----------
+// ---------- animasi jejak (sub tahap 5d untuk DFA, 6i untuk NFA) ----------
 
 const kendaliJejak = document.getElementById('kendali-jejak');
 const pitaInput = document.getElementById('pita-input');
@@ -368,8 +382,16 @@ const JEDA_LANGKAH = 1000; // milidetik per langkah saat diputar
 // diputar otomatis; langkah tetap bisa dijalankan dengan tombol.
 const kurangiGerak = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-// Jejak simulasi terakhir: { start, hasil, posisi }. null = tidak ada.
+// Jejak simulasi terakhir: { jenis: 'DFA'|'NFA', automaton, hasil, posisi }.
+// null = tidak ada.
 let jejak = null;
+
+// Keadaan jejak di posisi sekarang (apa yang disorot dan teks penjelasannya).
+function keadaanSekarang() {
+  return jejak.jenis === 'NFA'
+    ? Animasi.keadaanJejakNfa(jejak.automaton, jejak.hasil, jejak.posisi)
+    : Animasi.keadaanJejak(jejak.automaton.start, jejak.hasil, jejak.posisi);
+}
 let timerJejak = null;
 
 // Pita input: simbol yang sudah dibaca, simbol yang baru dibaca, dan sisanya.
@@ -390,7 +412,7 @@ function tampilkanJejak() {
     Animasi.sorotDiagram(svg, null);
     return;
   }
-  const k = Animasi.keadaanJejak(jejak.start, jejak.hasil, jejak.posisi);
+  const k = keadaanSekarang();
   kendaliJejak.hidden = false;
   Animasi.sorotDiagram(svg, k);
   gambarPita(jejak.hasil.steps, k.posisi);
@@ -494,19 +516,29 @@ function tabelJejak(steps) {
 }
 
 // Tabel jejak NFA: himpunan state per langkah (spesifikasi bagian 8.6).
-// Baris 0 adalah himpunan awal, ε-closure({q₀}).
-function tabelJejakNfa(r) {
+// Baris 0 adalah himpunan awal, ε-closure({q₀}). Kolom gabungan δ dan
+// ε-closure dipisah; kolom ε-closure hanya ada jika NFA punya ε-transisi
+// (tanpa ε, gabungan δ sudah himpunan sesudahnya).
+function tabelJejakNfa(r, adaEpsilon) {
   const tabel = el('table');
   const kepala = el('tr');
-  for (const h of ['No', 'Himpunan sebelum', 'Simbol', 'Himpunan sesudah']) kepala.appendChild(el('th', h));
+  const judul = adaEpsilon
+    ? ['No', 'Himpunan sebelum', 'Simbol', 'Gabungan δ', 'ε-closure (sesudah)']
+    : ['No', 'Himpunan sebelum', 'Simbol', 'Gabungan δ (sesudah)'];
+  for (const h of judul) kepala.appendChild(el('th', h));
   tabel.appendChild(kepala);
-  const baris = (sel) => {
+  const baris = (nomor, sel) => {
     const tr = el('tr');
+    tr.dataset.langkah = String(nomor); // disorot oleh animasi jejak
     for (const isi of sel) tr.appendChild(el('td', isi));
     tabel.appendChild(tr);
   };
-  baris(['0', '(awal)', '', himpunan(r.start.states)]);
-  r.steps.forEach((s, i) => baris([String(i + 1), himpunan(s.from), s.symbol, himpunan(s.to)]));
+  baris(0, adaEpsilon ? ['0', '(awal)', '', '', himpunan(r.start.states)] : ['0', '(awal)', '', himpunan(r.start.states)]);
+  r.steps.forEach((s, i) => {
+    const sel = [String(i + 1), himpunan(s.from), s.symbol, himpunan(s.moved)];
+    if (adaEpsilon) sel.push(himpunan(s.to));
+    baris(i + 1, sel);
+  });
   return tabel;
 }
 
@@ -516,8 +548,14 @@ function tampilkanSimulasiNfa(data) {
     ? kotak('ok', '✔', `DITERIMA: himpunan terakhir ${himpunan(r.finalStates)} memuat state akhir`)
     : kotak('galat', '✖', `DITOLAK: himpunan terakhir ${himpunan(r.finalStates)} tidak memuat state akhir`);
   status.classList.add('status-hasil');
-  ganti(hasil, status, el('h3', 'Jejak (himpunan state per langkah)'), tabelJejakNfa(r));
+  const adaEpsilon = data.automaton.transitions.some((t) => t.symbol === 'ε' && t.to.length > 0);
+  ganti(hasil, status, el('h3', 'Jejak (himpunan state per langkah)'), gulung(tabelJejakNfa(r, adaEpsilon)));
+
+  // Sama dengan DFA: diagram digambar dari NFA yang baru disimulasikan, lalu
+  // jejaknya diputar (beberapa state dan panah disorot sekaligus).
+  jejak = { jenis: 'NFA', automaton: data.automaton, hasil: r, posisi: 0 };
   perbaruiDiagram({ syntaxError: null, type: data.type, errors: [], warnings: data.warnings, automaton: data.automaton });
+  if (!kurangiGerak.matches) putarJejak();
 }
 
 function tampilkanSimulasi(data) {
@@ -534,7 +572,7 @@ function tampilkanSimulasi(data) {
 
   // Diagram digambar dari DFA yang baru saja disimulasikan, supaya animasi
   // pasti cocok dengan gambarnya.
-  jejak = { start: data.automaton.start, hasil: r, posisi: 0 };
+  jejak = { jenis: 'DFA', automaton: data.automaton, hasil: r, posisi: 0 };
   perbaruiDiagram({ syntaxError: null, type: data.type, errors: [], warnings: data.warnings, automaton: data.automaton });
   if (!kurangiGerak.matches) putarJejak();
 }
@@ -558,6 +596,151 @@ async function jalankan() {
     tampilkanSimulasi(data);
   } catch {
     ganti(hasil, kotak('galat', '✖', 'Tidak bisa menghubungi server.'));
+  }
+}
+
+// ---------- konversi (sub tahap 6j, spesifikasi bagian 9 dan 10) ----------
+
+let konversiBerlaku = false;
+
+function konversiKedaluwarsa() {
+  if (!konversiBerlaku) return;
+  konversiBerlaku = false;
+  ganti(hasilKonversi, kotak('netral', 'ℹ', 'Definisi atau jenis berubah. Tekan tombol konversi lagi.'));
+}
+
+// Tabel lebar dibungkus wadah yang bisa digulung ke samping, supaya halaman
+// tidak ikut melebar melewati layar.
+function gulung(isi) {
+  const d = el('div', undefined, 'gulung');
+  d.appendChild(isi);
+  return d;
+}
+
+// Tabel dari judul kolom dan baris (isi sel selalu teks), sudah dibungkus gulung().
+function tabel(judul, baris, kelasSel = () => '') {
+  const t = el('table');
+  const kepala = el('tr');
+  for (const h of judul) kepala.appendChild(el('th', h));
+  t.appendChild(kepala);
+  baris.forEach((b, i) => {
+    const tr = el('tr');
+    b.forEach((isi, j) => tr.appendChild(el('td', isi, kelasSel(i, j))));
+    t.appendChild(tr);
+  });
+  return gulung(t);
+}
+
+// Nama dokumen hasil: automata.fa -> automata-dfa.fa
+function namaHasilKonversi(akhiran) {
+  const dasar = Berkas.namaBerkas(namaBerkas.value, 'fa').replace(/\.fa$/, '');
+  return `${dasar}-${akhiran}.fa`;
+}
+
+// Hasil konversi dibuka sebagai dokumen baru di tab browser baru (spesifikasi
+// bagian 10). Isinya dititipkan di bagian # alamat (tidak dikirim ke server),
+// lalu dibaca saat halaman di tab baru dimuat (lihat bukaDariAlamat).
+function bukaDiTabBaru(nama, teks) {
+  const muatan = encodeURIComponent(JSON.stringify({ nama, teks }));
+  window.open(`${location.pathname}#buka=${muatan}`, '_blank', 'noopener');
+}
+
+function tombolBukaHasil(nama, teks) {
+  const b = el('button', `Buka hasil sebagai dokumen baru (${nama})`);
+  b.type = 'button';
+  b.addEventListener('click', () => bukaDiTabBaru(nama, teks));
+  return b;
+}
+
+function tampilkanKeDfa(h, q0) {
+  const awal = h.start.states;
+  const teksAwal =
+    awal.length === 1 && awal[0] === q0
+      ? `Langkah 0: state awal DFA = ${himpunan(awal)} → ${h.start.name}`
+      : `Langkah 0: state awal DFA = ε-closure({${q0}}) = ${himpunan(awal)} → ${h.start.name}`;
+  const judul = h.usesEpsilon
+    ? ['No', 'Himpunan', 'Simbol', 'Gabungan δ', 'ε-closure', 'Hasil', 'Keterangan']
+    : ['No', 'Himpunan', 'Simbol', 'Gabungan δ', 'Hasil', 'Keterangan'];
+  const baris = h.steps.map((s, i) => {
+    const b = [String(i + 1), s.fromName, s.symbol, himpunan(s.moved)];
+    if (h.usesEpsilon) b.push(himpunan(s.to));
+    b.push(s.toName, s.isNew ? 'baru' : 'sudah ada');
+    return b;
+  });
+  const kolomKet = judul.length - 1;
+  const alfabet = h.table[0] ? h.table[0].transitions.map((t) => t.symbol) : [];
+  const ringkas = h.table.map((r) => [
+    (r.isStart ? '→ ' : '') + (r.isAccept ? '* ' : '') + r.name,
+    ...r.transitions.map((t) => t.toName),
+  ]);
+  const nama = namaHasilKonversi('dfa');
+  ganti(
+    hasilKonversi,
+    kotak('ok', '✔', `NFA → DFA (konstruksi subset): ${h.table.length} state DFA.`),
+    el('h3', 'Langkah demi langkah'),
+    el('p', teksAwal, 'langkah0'),
+    baris.length > 0 ? tabel(judul, baris, (i, j) => (j === kolomKet && h.steps[i].isNew ? 'baru' : '')) : el('p', 'Tidak ada langkah (alfabet kosong).'),
+    el('h3', 'Tabel transisi DFA (→ state awal, * state akhir)'),
+    tabel(['State DFA', ...alfabet], ringkas),
+    tombolBukaHasil(nama, h.text)
+  );
+}
+
+function tampilkanKeNfa(h) {
+  const baris = h.mapping.map((m) => [
+    `δ(${m.from}, ${m.symbol}) = ${m.dfaTo}`,
+    m.removed ? '(dihapus: dead state)' : `δ(${m.from}, ${m.symbol}) = {${m.nfaTo.join(', ')}}`,
+  ]);
+  const anak = [kotak('ok', '✔', 'DFA → NFA: δ_N(q, a) = {δ_D(q, a)}.'), el('h3', 'Tabel pemetaan')];
+  anak.push(baris.length > 0 ? tabel(['DFA', 'NFA'], baris) : el('p', 'Tidak ada transisi.'));
+  if (h.removedStates.length > 0) {
+    anak.push(kotak('netral', 'ℹ', 'Dead state dibuang:', h.removedStates.map((r) => `${r.state} (${r.reason})`)));
+  }
+  anak.push(tombolBukaHasil(namaHasilKonversi('nfa'), h.text));
+  ganti(hasilKonversi, ...anak);
+}
+
+async function jalankanKonversi() {
+  const arah = dokumen.jenis === 'NFA' ? 'ke-dfa' : 'ke-nfa';
+  bagianKonversi.hidden = false;
+  konversiBerlaku = true;
+  try {
+    const res = await fetch('/api/konversi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...bodyDokumen(), arah, buangDeadState: arah === 'ke-nfa' && centangBuangDead.checked }),
+    });
+    const data = await res.json();
+    if (data.error) return ganti(hasilKonversi, kotak('galat', '✖', 'Tidak bisa dikonversi:', [data.error]));
+    if (data.errors.length > 0) {
+      return ganti(hasilKonversi, kotak('galat', '✖', `Tidak dikonversi: bukan ${data.type} yang valid.`, data.errors));
+    }
+    if (arah === 'ke-dfa') tampilkanKeDfa(data.hasil, automataTerakhir?.start ?? '');
+    else tampilkanKeNfa(data.hasil);
+    bagianKonversi.scrollIntoView({ behavior: kurangiGerak.matches ? 'auto' : 'smooth', block: 'start' });
+  } catch {
+    ganti(hasilKonversi, kotak('galat', '✖', 'Tidak bisa menghubungi server.'));
+  }
+}
+
+tombolKonversi.addEventListener('click', jalankanKonversi);
+centangBuangDead.addEventListener('change', konversiKedaluwarsa);
+
+// Tab baru yang dibuka oleh bukaDiTabBaru: ambil dokumen dari bagian # alamat.
+// Mengembalikan true jika ada dokumen yang dibuka.
+function bukaDariAlamat() {
+  if (!location.hash.startsWith('#buka=')) return false;
+  const muatan = location.hash.slice('#buka='.length); // baca dulu, baru bersihkan alamat
+  history.replaceState(null, '', location.pathname);
+  try {
+    const { nama, teks } = JSON.parse(decodeURIComponent(muatan));
+    const format = Berkas.formatDariNama(nama);
+    if (typeof teks !== 'string' || !format || Berkas.periksaBerkas({ teks, ukuran: teks.length })) return false;
+    bukaDokumen(teks, format, nama);
+    infoBerkasOk(`Dokumen baru dari konversi: ${namaBerkas.value} (${dokumen.jenis}). Simpan jika ingin disimpan.`);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -672,7 +855,7 @@ teksDfa.addEventListener('input', () => {
       infoBerkasOk(`Baris "type: ${p.jenis}" dipindah ke pilihan jenis automata.`);
     }
   }
-  hasilKedaluwarsa();
+  definisiBerubah();
   jadwalkanPeriksa();
 });
 input.addEventListener('input', hasilKedaluwarsa);
@@ -680,5 +863,6 @@ input.addEventListener('keydown', (e) => { if (e.key === 'Enter') jalankan(); })
 document.getElementById('tombol-jalankan').addEventListener('click', jalankan);
 
 muatDaftarContoh();
-// Saat halaman pertama kali dibuka: dokumen "NFA baru" (spesifikasi bagian 10).
-bukaDokumen(Berkas.TEMPLAT.NFA, 'fa', 'automata.fa');
+// Saat halaman pertama kali dibuka: dokumen "NFA baru" (spesifikasi bagian 10),
+// kecuali tab ini dibuka untuk hasil konversi.
+if (!bukaDariAlamat()) bukaDokumen(Berkas.TEMPLAT.NFA, 'fa', 'automata.fa');

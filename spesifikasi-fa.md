@@ -455,8 +455,26 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
   disimpan apa adanya, tanpa baris `type:`.
 - **Ganti format** hanya lewat menu di bagian 9.3. **NFA menjadi DFA** hanya
   lewat menu konversi NFA -> DFA (bagian 9.1).
+- **Konversi di halaman web**: tombol konversi sesuai jenis dokumen (NFA ->
+  DFA untuk NFA, DFA -> NFA untuk DFA, dengan pilihan "buang dead state").
+  Tabel konversi (bagian 9.1 dan 9.2) ditampilkan di halaman asal. **Hasil
+  konversi dibuka sebagai dokumen baru di tab browser baru**, sehingga
+  automata asal tetap ada di tab semula dan keduanya bisa dibandingkan. Nama
+  dokumen hasil: `<nama>-dfa.fa` atau `<nama>-nfa.fa`. Tabel konversi
+  ditandai usang jika definisi atau jenis di tab asal berubah.
 - **Tabel jejak NFA** memisahkan kolom hasil δ dan kolom ε-closure; animasi
   menyorot beberapa state dan panah sekaligus (bagian 8.6).
+  - Tabel punya baris 0 (himpunan awal). Kolom ε-closure hanya ada jika NFA
+    punya ε-transisi; tanpa ε, kolom gabungan δ sudah himpunan sesudahnya.
+  - Setiap posisi menyorot seluruh himpunan state aktif, serta panah δ dan
+    panah ε yang dipakai pada langkah itu (posisi 0: panah ε untuk
+    ε-closure({q₀})). Panah ε disorot sama dengan panah δ; teks langkah
+    menyebut gabungan δ dan ε-closure.
+  - Di akhir input: jika DITERIMA, state akhir di himpunan terakhir ditandai
+    hijau (state lain tetap ditandai aktif); jika DITOLAK, semua state di
+    himpunan terakhir ditandai merah. Himpunan kosong tidak menyorot apa pun.
+    Hasil selalu juga ditulis sebagai kata.
+  - Putar otomatis, tombol, dan aturan gerak dikurangi sama dengan DFA (5d).
 - Catatan: teks yang disalin dari kotak definisi tidak membawa baris
   `type:`. Jika ditempel ke file `.fa` di luar aplikasi, file itu dibaca
   sebagai NFA.
@@ -521,6 +539,8 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Hasil konversi di halaman web dibuka sebagai dokumen baru di tab browser baru; tabel konversi tetap di tab asal | Automata asal tidak hilang dan bisa dibandingkan dengan hasilnya |
+| 2026-11-23 | Animasi jejak NFA (bagian 10): sorot seluruh himpunan aktif dan semua panah δ/ε langkah itu; di akhir, state akhir di himpunan hijau jika DITERIMA, semua merah jika DITOLAK; tabel dengan baris 0 dan kolom ε-closure hanya jika ada ε-transisi | Mahasiswa melihat semua cabang NFA sekaligus; hasil akhir jelas walau himpunannya berisi banyak state |
 | 2026-11-23 | Halaman web (bagian 10): teks dikirim apa adanya dengan field `type` dari widget (bukan diberi baris `type:`); templat "DFA baru" (q0 dengan loop 0 dan 1); file selain `.fa`/`.dfa` ditolak saat dibuka; "Jadikan .fa" membuang baris `type:` dari teks `.dfa` | Nomor baris di pesan error tetap sesuai kotak definisi; DFA baru langsung valid; sama dengan CLI |
 | 2026-11-23 | CLI (bagian 9.4): perintah `ke-dfa` dan `ke-nfa`; nama hasil bawaan `<nama>-dfa.fa`/`<nama>-nfa.fa`; file yang sudah ada tidak ditimpa; hanya ekstensi `.fa`/`.dfa` yang diterima (sebelumnya file apa pun dibaca sebagai DFA) | Nama perintah berbahasa Indonesia dan mudah diingat; tidak ada hasil kerja yang hilang; ekstensi menentukan cara membaca |
 | 2026-11-23 | Konversi DFA -> NFA (bagian 9.2): DFA dari `.dfa` dengan nama/simbol yang tidak sah di `.fa` membuat konversi berhenti dengan pesan; state tak terjangkau yang juga dead ikut dibuang jika "buang dead state" dipilih; teks hasil menyebut dead state yang dibuang | Tidak menghasilkan file `.fa` yang rusak; definisi dead state berlaku sama untuk semua state |
@@ -569,7 +589,5 @@ adalah bagian 12 ini.
   W1 dengan ε)? Disetujui (lihat riwayat keputusan)
 - [x] Dokumen saat halaman web pertama kali dibuka? NFA baru satu state tanpa
   transisi, Σ = {0, 1}, F kosong (bagian 10)
-- [ ] Halaman web: hasil konversi (NFA -> DFA maupun DFA -> NFA) ditampilkan
-  bagaimana? Misalnya menggantikan isi kotak definisi, atau dibuka sebagai
-  dokumen baru sehingga automata asal tetap ada. Dibahas saat sub tahap
-  konversi di web (catatan ini sempat hilang saat penataan ulang)
+- [x] Halaman web: hasil konversi ditampilkan bagaimana? Sebagai dokumen baru
+  di tab browser baru; automata asal tetap di tab semula (bagian 10)

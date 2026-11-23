@@ -54,6 +54,14 @@
       <div id="tanda-input" aria-live="polite"></div>
 
       <button id="tombol-jalankan">Jalankan</button>
+
+      <!-- Tahap 6j: konversi NFA -> DFA atau DFA -> NFA (spesifikasi bagian 9 dan 10) -->
+      <div class="aksi-konversi">
+        <button type="button" id="tombol-konversi">Konversi NFA → DFA</button>
+        <label id="label-buang-dead" class="sisi" hidden>
+          <input type="checkbox" id="buang-dead-state"> buang dead state
+        </label>
+      </div>
     </section>
 
     <section>
@@ -89,6 +97,11 @@
         Seret state untuk memindahkannya, atau pilih state dengan Tab lalu geser dengan tombol panah.
         Posisi hanya berlaku selama halaman ini terbuka.
       </p>
+
+      <div id="bagian-konversi" hidden>
+        <h2>Konversi</h2>
+        <div id="hasil-konversi" aria-live="polite"></div>
+      </div>
     </section>
   </main>
 

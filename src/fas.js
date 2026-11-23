@@ -5,6 +5,7 @@ const path = require('node:path');
 const { parseDfa, parseFa } = require('./parser');
 const { validateDfa, warnDfa, validateNfa, warnNfa } = require('./validator');
 const { simulate, simulateNfa } = require('./simulator');
+const { nfaToDfa, dfaToNfa } = require('./converter');
 
 /**
  * Parse, validasi, lalu (jika valid) jalankan simulasi.
@@ -127,4 +128,35 @@ function analisisFa(teks, format, jenis) {
   }
 }
 
-module.exports = { jalankan, analisis, formatDariNama, periksaFa, jalankanFa, analisisFa };
+/**
+ * Konversi untuk CLI dan web (spesifikasi bagian 9): periksa dulu, lalu
+ * konversi jika jenisnya sesuai dan automata valid.
+ *   arah 'ke-dfa': NFA -> DFA (konstruksi subset), hasil nfaToDfa
+ *   arah 'ke-nfa': DFA -> NFA, hasil dfaToNfa
+ *
+ * @param {string} teks
+ * @param {'fa'|'dfa'} format
+ * @param {'DFA'|'NFA'|undefined} jenis jenis dari luar teks (lihat parseFa, opsi.type)
+ * @param {'ke-dfa'|'ke-nfa'} arah
+ * @param {{ buangDeadState?: boolean }} [opsi] hanya untuk 'ke-nfa'
+ * @returns {{ type: 'DFA'|'NFA', errors: string[], hasil: object|null }}
+ *   hasil null jika automata belum valid (lihat errors)
+ * @throws {Error} jika sintaks salah, arah tidak dikenal, jenis tidak sesuai
+ *   arah, atau konversi gagal (mis. tabrakan nama)
+ */
+function konversiFa(teks, format, jenis, arah, opsi = {}) {
+  if (arah !== 'ke-dfa' && arah !== 'ke-nfa') throw new Error(`arah konversi '${arah}' tidak dikenal`);
+  const h = periksaFa(teks, format, jenis);
+  if (arah === 'ke-dfa' && h.type !== 'NFA') {
+    throw new Error('automata ini sudah DFA; konversi NFA -> DFA hanya untuk NFA');
+  }
+  if (arah === 'ke-nfa' && h.type !== 'DFA') {
+    throw new Error('automata ini sudah NFA; konversi DFA -> NFA hanya untuk DFA');
+  }
+  if (h.errors.length > 0) return { type: h.type, errors: h.errors, hasil: null };
+  const hasil =
+    arah === 'ke-dfa' ? nfaToDfa(h.automaton) : dfaToNfa(h.automaton, { removeDeadStates: Boolean(opsi.buangDeadState) });
+  return { type: h.type, errors: [], hasil };
+}
+
+module.exports = { jalankan, analisis, formatDariNama, periksaFa, jalankanFa, analisisFa, konversiFa };

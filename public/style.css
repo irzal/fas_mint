@@ -114,3 +114,15 @@ tr.aktif td { background: #fff3c4; font-weight: 700; }
 #keterangan-jenis { margin: 4px 0 0; font-size: 0.9rem; color: #555; }
 /* Baris tombol ganti format disembunyikan jika semua tombolnya tersembunyi. */
 .aksi-berkas:not(:has(> :not([hidden]))) { display: none; }
+
+/* Konversi (tahap 6j) */
+.aksi-konversi { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.aksi-konversi button { margin-top: 0; }
+.aksi-konversi label.sisi { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 400; }
+.aksi-konversi input { width: auto; }
+#hasil-konversi h3 { margin: 14px 0 4px; font-size: 1rem; }
+#hasil-konversi p { margin: 6px 0; }
+#hasil-konversi .langkah0 { font-family: ui-monospace, monospace; font-size: 14px; }
+#hasil-konversi td.baru { font-weight: 700; }
+.gulung { overflow-x: auto; max-width: 100%; }
+.gulung table { width: auto; min-width: 100%; }

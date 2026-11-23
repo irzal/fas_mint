@@ -40,13 +40,19 @@ di folder yang sama. File yang sudah ada tidak pernah ditimpa.
    misalnya `δ(q1, 1) belum didefinisikan`. Diagram state ikut diperbarui
    saat mengetik.
 4. Tulis string input (kosongkan untuk ε), lalu tekan Jalankan (atau Enter).
-   Hasil DITERIMA/DITOLAK dan tabel jejak muncul. Untuk DFA, jejaknya diputar
-   di diagram: state aktif, panah δ yang dipakai, dan simbol yang dibaca
+   Hasil DITERIMA/DITOLAK dan tabel jejak muncul, lalu jejaknya diputar di
+   diagram: state aktif, panah δ yang dipakai, dan simbol yang dibaca
    disorot. Pakai tombol Awal, Mundur, Putar/Jeda, dan Maju untuk mengikuti
-   per langkah. Untuk NFA, tabel jejak berisi himpunan state per langkah.
+   per langkah. Untuk NFA, yang disorot adalah seluruh himpunan state aktif
+   beserta panah δ dan ε-nya; tabel jejak memisahkan gabungan δ dan
+   ε-closure.
 5. Jika diagram kurang rapi, ganti tata letak atau seret state ke tempat lain.
    Dengan keyboard: Tab ke state, lalu tombol panah (Shift + panah: geser halus).
-6. Simpan menyimpan definisi ke komputer sesuai format dokumen (`.fa` atau `.dfa`).
+6. "Konversi NFA → DFA" (untuk NFA) menampilkan langkah konstruksi subset dan
+   tabel transisi DFA; "Konversi DFA → NFA" (untuk DFA, boleh dengan "buang
+   dead state") menampilkan tabel pemetaan. "Buka hasil sebagai dokumen baru"
+   membuka hasilnya di tab browser baru, jadi automata asal tetap ada.
+7. Simpan menyimpan definisi ke komputer sesuai format dokumen (`.fa` atau `.dfa`).
 
 Halaman bisa dipakai di ponsel. Di layar sempit, diagram yang lebar bisa
 digulung ke samping.
@@ -112,6 +118,7 @@ jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
 | GET    | `/healthz`             | menjawab `ok` jika proses hidup (untuk diagnosis hosting) |
 | POST   | `/api/simulasi`        | body `{ "dfa": "...", "input": "0101", "format": "fa", "type": "NFA" }` |
 | POST   | `/api/analisis`        | body `{ "dfa": "...", "format": "fa", "type": "NFA" }`; periksa tanpa simulasi |
+| POST   | `/api/konversi`        | body `{ "dfa": "...", "arah": "ke-dfa", "format": "fa", "type": "NFA", "buangDeadState": false }` |
 
 - `dfa`: isi file, boleh teks `.dfa` maupun `.fa`. Nama field ini dipertahankan
   supaya klien lama tetap jalan.
@@ -148,6 +155,14 @@ sintaks yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris)
 dan `type`, `automaton`, `dfa` menjadi `null`. Body yang bukan JSON atau tanpa
 field `dfa` dijawab `400`.
 
+`/api/konversi` mengonversi NFA -> DFA (`"arah": "ke-dfa"`, konstruksi subset)
+atau DFA -> NFA (`"arah": "ke-nfa"`, boleh dengan `"buangDeadState": true`).
+Menjawab `200` dengan `{ type, errors, hasil }`; `hasil` adalah hasil
+`nfaToDfa` atau `dfaToNfa` dari `src/converter.js` (teks `.fa`, objek automata,
+dan tabel langkah/pemetaan), atau `null` jika automata belum valid. Sintaks
+salah, arah tidak dikenal, jenis yang tidak sesuai arah, atau konversi yang
+gagal (mis. tabrakan nama) dijawab `400` dengan `{ error }`.
+
 ## Rencana tahap 5 (web)
 
 | Sub tahap | Isi | Status |
@@ -179,8 +194,8 @@ CLI dan web.
 | 6f | CLI: membaca `.fa` dan `.dfa`, jejak NFA, perintah konversi kedua arah (mencetak tabel dan menulis file hasil `.fa`). Perintah `ke-dfa` dan `ke-nfa`; fungsi bersama `periksaFa`/`jalankanFa` di `src/fas.js` | selesai (tes `test/cli-fa.test.js`) |
 | 6g | Contoh `.fa` (NFA, NFA dengan ε, DFA ber-`type: DFA`, contoh tidak valid) dan server/API untuk `.fa` (daftar contoh, analisis, simulasi). Field `format` di API; halaman web sementara hanya menampilkan contoh `.dfa` sampai 6h-6i | selesai (tes `test/server-fa.test.js`, `test/contoh-fa.test.js`; halaman lama dicoba di Chromium) |
 | 6h | Web, dokumen: widget jenis automata (terkunci untuk `.dfa`), baris `type:` disembunyikan dari kotak definisi, menu "DFA baru"/"NFA baru", dokumen awal NFA satu state, Simpan sesuai format dokumen, menu "Jadikan .fa (type: DFA)"/"Jadikan .dfa". Field `type` di API; diagram dan tabel jejak dasar untuk NFA (tanpa animasi) | selesai (dicoba di Chromium, termasuk lebar 320 px) |
-| 6i | Web, NFA: diagram dengan ε-transisi, tabel jejak NFA (kolom hasil δ dan ε-closure terpisah), animasi yang menyorot beberapa state dan panah sekaligus | belum |
-| 6j | Web, konversi: menu konversi kedua arah, tabel langkah/pemetaan, tampilan hasil konversi (masih perlu diputuskan, spesifikasi bagian 13) | belum |
+| 6i | Web, NFA: diagram dengan ε-transisi, tabel jejak NFA (kolom hasil δ dan ε-closure terpisah), animasi yang menyorot beberapa state dan panah sekaligus. Fungsi `keadaanJejakNfa` di `public/animasi.js`; `sorotDiagram` umum untuk DFA dan NFA | selesai (tes `test/animasi-nfa.test.js`; dicoba di Chromium) |
+| 6j | Web, konversi: menu konversi kedua arah, tabel langkah/pemetaan; hasil dibuka sebagai dokumen baru di tab browser baru. API `/api/konversi`, fungsi `konversiFa` di `src/fas.js` | selesai (tes di `test/server-fa.test.js`; dicoba di Chromium, lebar 1000 dan 375 px) |
 | 6k | Penyelesaian: layar kecil dan aksesibilitas untuk bagian baru, README, contoh lama tetap jalan | belum |
 
 ## Status

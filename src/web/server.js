@@ -6,7 +6,7 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { jalankanFa, analisisFa } = require('../fas');
+const { jalankanFa, analisisFa, konversiFa } = require('../fas');
 
 const FOLDER_PUBLIC = path.join(__dirname, '..', '..', 'public');
 const FOLDER_CONTOH = path.join(__dirname, '..', '..', 'contoh');
@@ -171,6 +171,27 @@ async function analisisDfa(req, res) {
   kirimJson(res, 200, { ...h, dfa: h.automaton });
 }
 
+// POST /api/konversi  body: { "dfa": "<isi file>", "arah": "ke-dfa"|"ke-nfa",
+//   "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA", "buangDeadState"?: true|false }
+// 200: { type, errors, hasil }  (hasil null jika automata belum valid; untuk
+//      ke-dfa berbentuk hasil nfaToDfa, untuk ke-nfa hasil dfaToNfa)
+// 400: { error }  (sintaks salah, arah tidak dikenal, jenis tidak sesuai arah,
+//      atau konversi gagal)
+async function konversi(req, res) {
+  const data = await bacaJson(req, res, 'dfa', 'arah');
+  if (!data) return;
+  const format = formatDariBody(data, res);
+  if (!format || !jenisDariBody(data, format, res)) return;
+  if (data.buangDeadState !== undefined && typeof data.buangDeadState !== 'boolean') {
+    return kirimJson(res, 400, { error: 'field "buangDeadState" harus true atau false' });
+  }
+  try {
+    kirimJson(res, 200, konversiFa(data.dfa, format, data.type, data.arah, { buangDeadState: data.buangDeadState }));
+  } catch (err) {
+    kirimJson(res, 400, { error: err.message });
+  }
+}
+
 function fileStatis(res, urlPath) {
   const relatif = urlPath === '/' ? 'index.html' : urlPath.slice(1);
   const file = path.normalize(path.join(FOLDER_PUBLIC, relatif));
@@ -230,6 +251,7 @@ function tangani(req, res, folderContoh) {
   }
   if (req.method === 'POST' && pathname === '/api/simulasi') return simulasi(req, res);
   if (req.method === 'POST' && pathname === '/api/analisis') return analisisDfa(req, res);
+  if (req.method === 'POST' && pathname === '/api/konversi') return konversi(req, res);
   if (req.method === 'GET') return fileStatis(res, pathname);
 
   kirimJson(res, 405, { error: 'method tidak didukung' });

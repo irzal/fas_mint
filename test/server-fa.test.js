@@ -174,3 +174,54 @@ test('field type tidak sah atau tanpa format fa dijawab 400', async () => {
     assert.match(data.error, /"type" harus "DFA" atau "NFA"/);
   }
 });
+
+// ---------- konversi (sub tahap 6j) ----------
+
+test('konversi ke-dfa: hasil konstruksi subset (teks, langkah, tabel)', async () => {
+  const { status, data } = await post('/api/konversi', { dfa: await contoh('nfa-berakhiran-01.fa'), format: 'fa', arah: 'ke-dfa' });
+  assert.equal(status, 200);
+  assert.equal(data.type, 'NFA');
+  assert.deepEqual(data.errors, []);
+  assert.match(data.hasil.text, /^type: DFA\n/);
+  assert.equal(data.hasil.steps.length, 6);
+  assert.deepEqual(data.hasil.table.map((r) => r.name), ['[q0]', '[q0,q1]', '[q0,q2]']);
+});
+
+test('konversi ke-nfa dengan buang dead state, jenis dari field type', async () => {
+  const teks = 'states: q0 q1 mati\nalphabet: 0 1\nstart: q0\naccept: q1\nq0 0 -> q1\nq0 1 -> mati\nq1 0 -> q1\nq1 1 -> mati\nmati 0 -> mati\nmati 1 -> mati\n';
+  const { status, data } = await post('/api/konversi', { dfa: teks, format: 'fa', type: 'DFA', arah: 'ke-nfa', buangDeadState: true });
+  assert.equal(status, 200);
+  assert.deepEqual(data.hasil.removedStates.map((r) => r.state), ['mati']);
+  assert.match(data.hasil.text, /^type: NFA\n/);
+});
+
+test('konversi: automata tidak valid dijawab 200 dengan errors dan hasil null', async () => {
+  const { status, data } = await post('/api/konversi', { dfa: await contoh('tidak-valid-nfa-state-tak-dikenal.fa'), format: 'fa', arah: 'ke-dfa' });
+  assert.equal(status, 200);
+  assert.equal(data.hasil, null);
+  assert.equal(data.errors.length, 3);
+});
+
+test('konversi: jenis tidak sesuai arah, arah tak dikenal, sintaks salah dijawab 400', async () => {
+  const dfa = await contoh('berakhiran-01.dfa');
+  assert.match((await post('/api/konversi', { dfa, arah: 'ke-dfa' })).data.error, /sudah DFA/);
+  assert.match((await post('/api/konversi', { dfa: await contoh('nfa-berakhiran-01.fa'), format: 'fa', arah: 'ke-nfa' })).data.error, /sudah NFA/);
+  assert.match((await post('/api/konversi', { dfa, arah: 'ke-pda' })).data.error, /arah konversi 'ke-pda' tidak dikenal/);
+  const salah = await post('/api/konversi', { dfa: 'states: q0', format: 'fa', arah: 'ke-dfa' });
+  assert.equal(salah.status, 400);
+  assert.match(salah.data.error, /'alphabet:' tidak ada/);
+});
+
+test('konversi: field yang salah bentuk dijawab 400', async () => {
+  assert.equal((await post('/api/konversi', { dfa: 'x' })).status, 400); // tanpa arah
+  const r = await post('/api/konversi', { dfa: 'x', arah: 'ke-nfa', buangDeadState: 'ya' });
+  assert.equal(r.status, 400);
+  assert.match(r.data.error, /"buangDeadState" harus true atau false/);
+});
+
+test('konversi ke-nfa: nama state .dfa yang tidak sah di .fa dijawab 400', async () => {
+  const teks = 'states: a,b\nalphabet: 0\nstart: a,b\naccept:\na,b 0 -> a,b\n';
+  const { status, data } = await post('/api/konversi', { dfa: teks, format: 'dfa', arah: 'ke-nfa' });
+  assert.equal(status, 400);
+  assert.match(data.error, /konversi gagal: nama state 'a,b'/);
+});
