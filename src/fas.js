@@ -1,9 +1,10 @@
 // Titik masuk bersama: dipakai oleh CLI dan antarmuka web,
 // supaya keduanya menjalankan langkah yang sama persis.
 
-const { parseDfa } = require('./parser');
-const { validateDfa, warnDfa } = require('./validator');
-const { simulate } = require('./simulator');
+const path = require('node:path');
+const { parseDfa, parseFa } = require('./parser');
+const { validateDfa, warnDfa, validateNfa, warnNfa } = require('./validator');
+const { simulate, simulateNfa } = require('./simulator');
 
 /**
  * Parse, validasi, lalu (jika valid) jalankan simulasi.
@@ -53,4 +54,56 @@ function analisis(teksDfa) {
   };
 }
 
-module.exports = { jalankan, analisis };
+// ===================== DFA dan NFA (tahap 6) =====================
+
+/**
+ * Format file dari namanya: '.fa' -> 'fa', '.dfa' -> 'dfa', selain itu null.
+ * Huruf besar/kecil ekstensi tidak dibedakan (mis. CONTOH.FA).
+ *
+ * @param {string} nama nama atau jalur file
+ * @returns {'fa'|'dfa'|null}
+ */
+function formatDariNama(nama) {
+  const ext = path.extname(String(nama)).toLowerCase();
+  if (ext === '.fa') return 'fa';
+  if (ext === '.dfa') return 'dfa';
+  return null;
+}
+
+/**
+ * Parse lalu validasi, untuk DFA maupun NFA. Jenisnya ditentukan format file
+ * dan baris `type:` (spesifikasi bagian 8.1). `warnings` berisi peringatan
+ * parser (mis. baris type: diabaikan di .dfa) lalu peringatan validator;
+ * peringatan validator hanya diberikan jika tidak ada error.
+ *
+ * @param {string} teks isi file
+ * @param {'fa'|'dfa'} format
+ * @returns {{ type: 'DFA'|'NFA', errors: string[], warnings: string[],
+ *   automaton: import("./parser").Dfa|import("./parser").Nfa }}
+ * @throws {Error} jika sintaks salah
+ */
+function periksaFa(teks, format) {
+  const { type, automaton, warnings: peringatanParser } = parseFa(teks, format);
+  const errors = type === 'DFA' ? validateDfa(automaton) : validateNfa(automaton);
+  const peringatan = errors.length > 0 ? [] : type === 'DFA' ? warnDfa(automaton) : warnNfa(automaton);
+  return { type, errors, warnings: [...peringatanParser, ...peringatan], automaton };
+}
+
+/**
+ * Seperti periksaFa, lalu (jika valid) jalankan simulasi DFA atau NFA.
+ * `result` berbentuk HasilSimulasi (DFA, bagian 7) atau HasilSimulasiNfa
+ * (NFA, bagian 8.6), atau null jika ada error.
+ *
+ * @param {string} teks isi file
+ * @param {'fa'|'dfa'} format
+ * @param {string} input string masukan
+ * @throws {Error} jika sintaks salah, atau simbol input tidak ada di Σ
+ */
+function jalankanFa(teks, format, input) {
+  const hasil = periksaFa(teks, format);
+  if (hasil.errors.length > 0) return { ...hasil, result: null };
+  const result = hasil.type === 'DFA' ? simulate(hasil.automaton, input) : simulateNfa(hasil.automaton, input);
+  return { ...hasil, result };
+}
+
+module.exports = { jalankan, analisis, formatDariNama, periksaFa, jalankanFa };

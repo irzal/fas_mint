@@ -76,7 +76,8 @@ test('simbol di luar Σ: pesan dan tanda ^ di bawah simbolnya, kode keluar 1', (
 test('tanpa argumen file: tampilkan cara pakai, kode keluar 1', () => {
   const { kode, out } = jalankanCli([]);
   assert.equal(kode, 1);
-  assert.match(out[0], /Pemakaian: node src\/cli\.js/);
+  assert.equal(out[0], 'Pemakaian:');
+  assert.match(out[1], /node src\/cli\.js <file\.fa\|file\.dfa> \[string-input\]/);
 });
 
 test('file tidak ada: pesan jelas, bukan stack trace', () => {

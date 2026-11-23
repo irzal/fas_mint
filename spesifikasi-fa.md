@@ -405,6 +405,19 @@ mengganti format DFA bukan konversi:
   `type:`). Tidak tersedia untuk mode NFA; NFA menjadi DFA hanya lewat
   konversi NFA -> DFA (bagian 9.1).
 
+### 9.4 Konversi di CLI
+
+- Perintah `ke-dfa <file.fa> [hasil.fa]` (NFA -> DFA) dan
+  `ke-nfa <file.fa|file.dfa> [hasil.fa] [--buang-dead-state]` (DFA -> NFA).
+  `ke-dfa` hanya menerima NFA, `ke-nfa` hanya menerima DFA; automata yang
+  tidak valid ditolak sebelum dikonversi.
+- Tanpa nama file hasil: `<nama>-dfa.fa` atau `<nama>-nfa.fa` di folder yang
+  sama dengan file asal.
+- File hasil tidak pernah menimpa file yang sudah ada; penolakannya muncul
+  sebelum tabel dicetak.
+- CLI hanya menerima file berekstensi `.fa` atau `.dfa`, karena ekstensi
+  menentukan cara membaca (bagian 8.1).
+
 ## 10. Halaman web untuk DFA dan NFA (tahap 6, belum diimplementasikan)
 
 Aturan CLI tidak berubah: file `.fa` dibaca menurut baris `type:` di
@@ -497,6 +510,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | CLI (bagian 9.4): perintah `ke-dfa` dan `ke-nfa`; nama hasil bawaan `<nama>-dfa.fa`/`<nama>-nfa.fa`; file yang sudah ada tidak ditimpa; hanya ekstensi `.fa`/`.dfa` yang diterima (sebelumnya file apa pun dibaca sebagai DFA) | Nama perintah berbahasa Indonesia dan mudah diingat; tidak ada hasil kerja yang hilang; ekstensi menentukan cara membaca |
 | 2026-11-23 | Konversi DFA -> NFA (bagian 9.2): DFA dari `.dfa` dengan nama/simbol yang tidak sah di `.fa` membuat konversi berhenti dengan pesan; state tak terjangkau yang juga dead ikut dibuang jika "buang dead state" dipilih; teks hasil menyebut dead state yang dibuang | Tidak menghasilkan file `.fa` yang rusak; definisi dead state berlaku sama untuk semua state |
 | 2026-11-23 | Nama file spesifikasi diganti dari `spesifikasi-dfa.md` menjadi `spesifikasi-fa.md` | Isinya mencakup DFA dan NFA, sejalan dengan ekstensi `.fa` |
 | 2026-11-23 | Halaman web pertama kali dibuka dengan dokumen "NFA baru": `states: q0`, `alphabet: 0 1`, `start: q0`, `accept:` (tanpa transisi) | Langsung valid sebagai NFA (sebagai DFA melanggar V6a); titik awal untuk menambah state dan transisi |
