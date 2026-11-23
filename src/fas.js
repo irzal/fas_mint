@@ -78,12 +78,13 @@ function formatDariNama(nama) {
  *
  * @param {string} teks isi file
  * @param {'fa'|'dfa'} format
+ * @param {'DFA'|'NFA'} [jenis] jenis dari luar teks (lihat parseFa, opsi.type)
  * @returns {{ type: 'DFA'|'NFA', errors: string[], warnings: string[],
  *   automaton: import("./parser").Dfa|import("./parser").Nfa }}
  * @throws {Error} jika sintaks salah
  */
-function periksaFa(teks, format) {
-  const { type, automaton, warnings: peringatanParser } = parseFa(teks, format);
+function periksaFa(teks, format, jenis) {
+  const { type, automaton, warnings: peringatanParser } = parseFa(teks, format, { type: jenis });
   const errors = type === 'DFA' ? validateDfa(automaton) : validateNfa(automaton);
   const peringatan = errors.length > 0 ? [] : type === 'DFA' ? warnDfa(automaton) : warnNfa(automaton);
   return { type, errors, warnings: [...peringatanParser, ...peringatan], automaton };
@@ -97,10 +98,11 @@ function periksaFa(teks, format) {
  * @param {string} teks isi file
  * @param {'fa'|'dfa'} format
  * @param {string} input string masukan
+ * @param {'DFA'|'NFA'} [jenis] jenis dari luar teks (lihat parseFa, opsi.type)
  * @throws {Error} jika sintaks salah, atau simbol input tidak ada di Σ
  */
-function jalankanFa(teks, format, input) {
-  const hasil = periksaFa(teks, format);
+function jalankanFa(teks, format, input, jenis) {
+  const hasil = periksaFa(teks, format, jenis);
   if (hasil.errors.length > 0) return { ...hasil, result: null };
   const result = hasil.type === 'DFA' ? simulate(hasil.automaton, input) : simulateNfa(hasil.automaton, input);
   return { ...hasil, result };
@@ -113,12 +115,13 @@ function jalankanFa(teks, format, input) {
  *
  * @param {string} teks isi file
  * @param {'fa'|'dfa'} format
+ * @param {'DFA'|'NFA'} [jenis] jenis dari luar teks (lihat parseFa, opsi.type)
  * @returns {{ syntaxError: string|null, type: 'DFA'|'NFA'|null, errors: string[],
  *   warnings: string[], automaton: object|null }}
  */
-function analisisFa(teks, format) {
+function analisisFa(teks, format, jenis) {
   try {
-    return { syntaxError: null, ...periksaFa(teks, format) };
+    return { syntaxError: null, ...periksaFa(teks, format, jenis) };
   } catch (err) {
     return { syntaxError: err.message, type: null, errors: [], warnings: [], automaton: null };
   }

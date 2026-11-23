@@ -10,23 +10,42 @@
 <body>
   <header>
     <h1>Finite Automata Simulator</h1>
-    <p>Tulis DFA dalam format <code>.dfa</code>, lalu uji sebuah string.</p>
+    <p>Tulis DFA atau NFA dalam format <code>.fa</code> (atau <code>.dfa</code> lama), lalu uji sebuah string.</p>
   </header>
 
   <main>
     <section>
+      <div class="menu-dokumen">
+        <button type="button" id="tombol-dfa-baru">DFA baru</button>
+        <button type="button" id="tombol-nfa-baru">NFA baru</button>
+      </div>
+
       <label for="pilih-contoh">Muat contoh:</label>
       <select id="pilih-contoh"><option value="">(pilih)</option></select>
 
-      <label for="teks-dfa">Definisi DFA (Q, Σ, δ, q₀, F)</label>
+      <!-- Tahap 6 (spesifikasi bagian 10): jenis automata dokumen yang sedang
+           dibuka. Untuk dokumen .fa bisa diganti; untuk dokumen .dfa terkunci DFA.
+           Baris type: tidak ditulis di kotak definisi, tetapi lewat pilihan ini. -->
+      <fieldset id="widget-jenis">
+        <legend>Jenis automata</legend>
+        <label><input type="radio" name="jenis" value="DFA"> DFA</label>
+        <label><input type="radio" name="jenis" value="NFA"> NFA</label>
+        <p id="keterangan-jenis"></p>
+      </fieldset>
+
+      <label for="teks-dfa">Definisi automata (Q, Σ, δ, q₀, F)</label>
       <textarea id="teks-dfa" rows="16" spellcheck="false"></textarea>
 
       <div class="aksi-berkas">
         <button type="button" id="tombol-buka">Buka…</button>
         <button type="button" id="tombol-simpan">Simpan</button>
         <label for="nama-berkas" class="sisi">Nama file</label>
-        <input id="nama-berkas" type="text" value="dfa.dfa" autocomplete="off" spellcheck="false">
-        <input id="pilih-berkas" type="file" accept=".dfa,text/plain" hidden>
+        <input id="nama-berkas" type="text" value="automata.fa" autocomplete="off" spellcheck="false">
+        <input id="pilih-berkas" type="file" accept=".fa,.dfa" hidden>
+      </div>
+      <div class="aksi-berkas">
+        <button type="button" id="tombol-jadikan-fa" hidden>Jadikan .fa (type: DFA)</button>
+        <button type="button" id="tombol-jadikan-dfa" hidden>Jadikan .dfa</button>
       </div>
       <div id="info-berkas" role="status" aria-live="polite"></div>
 
@@ -38,7 +57,7 @@
     </section>
 
     <section>
-      <h2>Pemeriksaan DFA</h2>
+      <h2>Pemeriksaan</h2>
       <div id="status-dfa" role="status" aria-live="polite">Belum ada definisi.</div>
 
       <h2>Hasil</h2>

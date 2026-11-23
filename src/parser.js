@@ -316,14 +316,24 @@ function errorBarisTakDikenal(b, formatFa) {
  * Membaca teks file .fa atau .dfa. Hanya memeriksa sintaks; apakah hasilnya
  * benar-benar DFA/NFA diperiksa validator.
  *
+ * Pilihan `opsi.type` ('DFA' atau 'NFA', hanya untuk format 'fa'): jenis
+ * automata sudah ditentukan di luar teks, mis. lewat pilihan jenis di halaman
+ * web yang menyembunyikan baris `type:` (bagian 10). Teks lalu tidak boleh
+ * berisi baris `type:` yang sah; nilai yang tidak dikenal tetap dilaporkan
+ * seperti biasa. Nomor baris di pesan error tetap sesuai teks yang diberikan.
+ *
  * @param {string} teks isi file
  * @param {'fa'|'dfa'} [format] format file, dari ekstensinya; bawaan 'fa'
+ * @param {{ type?: 'DFA'|'NFA' }} [opsi]
  * @returns {HasilParse}
  * @throws {Error} jika sintaks salah; pesan memuat nomor baris
  */
-function parseFa(teks, format = 'fa') {
+function parseFa(teks, format = 'fa', opsi = {}) {
   if (format !== 'fa' && format !== 'dfa') {
     throw new Error(`format '${format}' tidak dikenal (pilih 'fa' atau 'dfa')`);
+  }
+  if (opsi.type !== undefined && !(format === 'fa' && JENIS.includes(opsi.type))) {
+    throw new Error(`jenis '${opsi.type}' dari luar teks hanya boleh DFA atau NFA, dan hanya untuk format 'fa'`);
   }
   const formatFa = format === 'fa';
   const semua = barisBermakna(teks);
@@ -332,7 +342,18 @@ function parseFa(teks, format = 'fa') {
   // Langkah 1: tentukan jenis automata (bagian 8.1).
   let type;
   let baris = semua;
-  if (formatFa) {
+  if (formatFa && opsi.type) {
+    // Jenis dari luar teks: baris type: yang sah tidak boleh ada di teks.
+    type = opsi.type;
+    for (const b of semua) {
+      const cocok = BARIS_TYPE.exec(b.isi);
+      if (!cocok) continue;
+      bacaNilaiType(cocok[1], b.nomor); // nilai tak dikenal -> error biasa
+      throw new Error(
+        `baris ${b.nomor}: baris 'type:' tidak dipakai di sini, karena jenis automata sudah dipilih (${opsi.type})`
+      );
+    }
+  } else if (formatFa) {
     type = 'NFA'; // tanpa baris type: -> NFA
     const pertama = semua[0];
     const cocok = pertama && BARIS_TYPE.exec(pertama.isi);

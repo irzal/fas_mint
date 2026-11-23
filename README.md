@@ -28,18 +28,25 @@ di folder yang sama. File yang sudah ada tidak pernah ditimpa.
 
 ## Memakai halaman web
 
-1. Pilih contoh di "Muat contoh", tulis DFA sendiri di kotak definisi, atau
-   buka file `.dfa` dari komputer (tombol Buka…, atau seret file ke kotak).
-2. Kotak "Pemeriksaan DFA" langsung memberi tahu jika DFA belum valid,
+1. Mulai dari "NFA baru" atau "DFA baru", pilih contoh di "Muat contoh", atau
+   buka file `.fa`/`.dfa` dari komputer (tombol Buka…, atau seret file ke
+   kotak definisi).
+2. "Jenis automata" menunjukkan apakah dokumen dibaca sebagai DFA atau NFA.
+   Untuk dokumen `.fa` jenisnya bisa diganti di sini; baris `type:` tidak
+   ditulis di kotak definisi, tetapi ditambahkan otomatis saat menyimpan.
+   Dokumen `.dfa` (file lama) selalu DFA; "Jadikan .fa (type: DFA)" mengubahnya
+   menjadi dokumen `.fa`, dan "Jadikan .dfa" sebaliknya (hanya untuk DFA).
+3. Kotak "Pemeriksaan" langsung memberi tahu jika automata belum valid,
    misalnya `δ(q1, 1) belum didefinisikan`. Diagram state ikut diperbarui
    saat mengetik.
-3. Tulis string input (kosongkan untuk ε), lalu tekan Jalankan (atau Enter).
-   Hasil DITERIMA/DITOLAK dan tabel jejak muncul, lalu jejaknya diputar di
-   diagram: state aktif, panah δ yang dipakai, dan simbol yang dibaca disorot.
-   Pakai tombol Awal, Mundur, Putar/Jeda, dan Maju untuk mengikuti per langkah.
-4. Jika diagram kurang rapi, ganti tata letak atau seret state ke tempat lain.
+4. Tulis string input (kosongkan untuk ε), lalu tekan Jalankan (atau Enter).
+   Hasil DITERIMA/DITOLAK dan tabel jejak muncul. Untuk DFA, jejaknya diputar
+   di diagram: state aktif, panah δ yang dipakai, dan simbol yang dibaca
+   disorot. Pakai tombol Awal, Mundur, Putar/Jeda, dan Maju untuk mengikuti
+   per langkah. Untuk NFA, tabel jejak berisi himpunan state per langkah.
+5. Jika diagram kurang rapi, ganti tata letak atau seret state ke tempat lain.
    Dengan keyboard: Tab ke state, lalu tombol panah (Shift + panah: geser halus).
-5. Simpan menyimpan definisi ke komputer sebagai file `.dfa`.
+6. Simpan menyimpan definisi ke komputer sesuai format dokumen (`.fa` atau `.dfa`).
 
 Halaman bisa dipakai di ponsel. Di layar sempit, diagram yang lebar bisa
 digulung ke samping.
@@ -103,14 +110,18 @@ jadi aman dimuat dengan cara apa pun. Jangan mengganti file masuk menjadi
 | GET    | `/api/contoh`          | daftar file `.dfa` dan `.fa` di `contoh/`    |
 | GET    | `/api/contoh/<nama>`   | isi satu file contoh (teks)                  |
 | GET    | `/healthz`             | menjawab `ok` jika proses hidup (untuk diagnosis hosting) |
-| POST   | `/api/simulasi`        | body `{ "dfa": "...", "input": "0101", "format": "fa" }` |
-| POST   | `/api/analisis`        | body `{ "dfa": "...", "format": "fa" }`; periksa tanpa simulasi |
+| POST   | `/api/simulasi`        | body `{ "dfa": "...", "input": "0101", "format": "fa", "type": "NFA" }` |
+| POST   | `/api/analisis`        | body `{ "dfa": "...", "format": "fa", "type": "NFA" }`; periksa tanpa simulasi |
 
 - `dfa`: isi file, boleh teks `.dfa` maupun `.fa`. Nama field ini dipertahankan
   supaya klien lama tetap jalan.
 - `format` (opsional): `"fa"` atau `"dfa"`, yaitu format file yang isinya
   dikirim. Menentukan cara membaca (spesifikasi bagian 8.1): `.fa` tanpa
   `type:` adalah NFA, `.dfa` selalu DFA. Bawaan `"dfa"`. Nilai lain dijawab `400`.
+- `type` (opsional, hanya dengan `"format": "fa"`): `"DFA"` atau `"NFA"`, jenis
+  yang dipilih di luar teks (pilihan jenis di halaman web). Teks lalu tidak
+  boleh berisi baris `type:` yang sah. Nomor baris di pesan error tetap sesuai
+  teks yang dikirim.
 
 `/api/simulasi` menjawab `200` dengan
 `{ type, errors, warnings, automaton, dfa, result }`:
@@ -167,7 +178,7 @@ CLI dan web.
 | 6e | Konversi DFA -> NFA: tujuan ditulis `{p}`, pilihan buang dead state (state awal tidak pernah dibuang), tabel pemetaan. Fungsi `dfaToNfa` dan `findDeadStates` di `src/converter.js`; nama/simbol `.dfa` yang tidak sah di `.fa` menghentikan konversi dengan pesan | selesai (tes `test/converter-dfa-nfa.test.js`) |
 | 6f | CLI: membaca `.fa` dan `.dfa`, jejak NFA, perintah konversi kedua arah (mencetak tabel dan menulis file hasil `.fa`). Perintah `ke-dfa` dan `ke-nfa`; fungsi bersama `periksaFa`/`jalankanFa` di `src/fas.js` | selesai (tes `test/cli-fa.test.js`) |
 | 6g | Contoh `.fa` (NFA, NFA dengan ε, DFA ber-`type: DFA`, contoh tidak valid) dan server/API untuk `.fa` (daftar contoh, analisis, simulasi). Field `format` di API; halaman web sementara hanya menampilkan contoh `.dfa` sampai 6h-6i | selesai (tes `test/server-fa.test.js`, `test/contoh-fa.test.js`; halaman lama dicoba di Chromium) |
-| 6h | Web, dokumen: widget jenis automata (terkunci untuk `.dfa`), baris `type:` disembunyikan dari kotak definisi, menu "DFA baru"/"NFA baru", dokumen awal NFA satu state, Simpan sesuai format dokumen, menu "Jadikan .fa (type: DFA)"/"Jadikan .dfa" | belum |
+| 6h | Web, dokumen: widget jenis automata (terkunci untuk `.dfa`), baris `type:` disembunyikan dari kotak definisi, menu "DFA baru"/"NFA baru", dokumen awal NFA satu state, Simpan sesuai format dokumen, menu "Jadikan .fa (type: DFA)"/"Jadikan .dfa". Field `type` di API; diagram dan tabel jejak dasar untuk NFA (tanpa animasi) | selesai (dicoba di Chromium, termasuk lebar 320 px) |
 | 6i | Web, NFA: diagram dengan ε-transisi, tabel jejak NFA (kolom hasil δ dan ε-closure terpisah), animasi yang menyorot beberapa state dan panah sekaligus | belum |
 | 6j | Web, konversi: menu konversi kedua arah, tabel langkah/pemetaan, tampilan hasil konversi (masih perlu diputuskan, spesifikasi bagian 13) | belum |
 | 6k | Penyelesaian: layar kecil dan aksesibilitas untuk bagian baru, README, contoh lama tetap jalan | belum |

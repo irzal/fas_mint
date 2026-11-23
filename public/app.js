@@ -1,4 +1,4 @@
-// Kode sisi browser. Semua logika DFA ada di server (src/),
+// Kode sisi browser. Semua logika DFA/NFA ada di server (src/),
 // halaman ini hanya mengirim teks dan menampilkan hasil.
 // Teks dari pengguna/server selalu dipasang lewat textContent, bukan innerHTML.
 
@@ -13,6 +13,10 @@ const pilihBerkas = document.getElementById('pilih-berkas');
 const infoBerkas = document.getElementById('info-berkas');
 const pilihTataLetak = document.getElementById('pilih-tata-letak');
 const diagram = document.getElementById('diagram');
+const widgetJenis = document.getElementById('widget-jenis');
+const keteranganJenis = document.getElementById('keterangan-jenis');
+const tombolJadikanFa = document.getElementById('tombol-jadikan-fa');
+const tombolJadikanDfa = document.getElementById('tombol-jadikan-dfa');
 
 // ---------- pembantu DOM ----------
 
@@ -44,6 +48,103 @@ function ganti(wadah, ...anak) {
   wadah.replaceChildren(...anak);
 }
 
+// Himpunan state untuk dibaca: {q0, q1}; himpunan kosong: ∅.
+function himpunan(states) {
+  return states.length === 0 ? '∅' : `{${states.join(', ')}}`;
+}
+
+// ---------- dokumen .fa / .dfa dan jenis automata (spesifikasi bagian 10) ----------
+
+// Dokumen yang sedang dibuka:
+//   format: 'fa' atau 'dfa' (dari file yang dibuka; dokumen baru selalu 'fa')
+//   jenis:  'DFA' atau 'NFA' (dokumen .dfa selalu 'DFA')
+// Untuk dokumen .fa, baris type: TIDAK ada di kotak definisi: jenisnya
+// dipegang di sini dan ditampilkan lewat pilihan jenis (widget). Teks dikirim
+// ke server apa adanya bersama format dan jenis, jadi nomor baris di pesan
+// error tetap sesuai kotak definisi. Baris type: baru ditulis saat menyimpan.
+const dokumen = { format: 'fa', jenis: 'NFA' };
+
+// Isi body permintaan ke /api/analisis dan /api/simulasi.
+function bodyDokumen() {
+  return dokumen.format === 'fa'
+    ? { dfa: teksDfa.value, format: 'fa', type: dokumen.jenis }
+    : { dfa: teksDfa.value, format: 'dfa' };
+}
+
+// Menyelaraskan widget dan tombol ganti format dengan `dokumen`.
+function perbaruiWidget() {
+  for (const r of widgetJenis.querySelectorAll('input[name="jenis"]')) r.checked = r.value === dokumen.jenis;
+  widgetJenis.disabled = dokumen.format === 'dfa';
+  keteranganJenis.textContent =
+    dokumen.format === 'dfa'
+      ? 'Dokumen .dfa selalu dibaca sebagai DFA. Pakai "Jadikan .fa" untuk bisa memilih jenis.'
+      : `Dokumen .fa. Saat disimpan, baris "type: ${dokumen.jenis}" ditulis di baris pertama file.`;
+  tombolJadikanFa.hidden = dokumen.format !== 'dfa';
+  tombolJadikanDfa.hidden = !(dokumen.format === 'fa' && dokumen.jenis === 'DFA');
+}
+
+// Membuka teks sebagai dokumen baru (dari file, contoh, atau menu baru).
+// Untuk .fa, baris type: yang sah dipindah ke widget (tanpa type: -> NFA).
+// `jenisBaru` (opsional) dipakai menu "DFA baru"/"NFA baru".
+function bukaDokumen(teks, format, nama, jenisBaru) {
+  if (format === 'fa') {
+    const p = Berkas.pisahkanBarisType(teks);
+    dokumen.jenis = jenisBaru ?? p.jenis ?? 'NFA';
+    teks = p.teks;
+  } else {
+    dokumen.jenis = 'DFA';
+  }
+  dokumen.format = format;
+  teksDfa.value = teks;
+  namaBerkas.value = Berkas.namaBerkas(nama, format);
+  perbaruiWidget();
+  hasilKedaluwarsa();
+  periksa();
+}
+
+function dokumenBaru(jenis) {
+  bukaDokumen(Berkas.TEMPLAT[jenis], 'fa', 'automata.fa', jenis);
+  pilihContoh.value = '';
+  infoBerkasOk(`Dokumen ${jenis} baru.`);
+}
+
+widgetJenis.addEventListener('change', (e) => {
+  if (e.target.name !== 'jenis' || dokumen.format !== 'fa') return;
+  dokumen.jenis = e.target.value;
+  perbaruiWidget();
+  hasilKedaluwarsa();
+  periksa();
+});
+
+document.getElementById('tombol-dfa-baru').addEventListener('click', () => dokumenBaru('DFA'));
+document.getElementById('tombol-nfa-baru').addEventListener('click', () => dokumenBaru('NFA'));
+
+// Ganti format (bukan konversi, spesifikasi bagian 9.3).
+tombolJadikanFa.addEventListener('click', () => {
+  // Baris type: di dokumen .dfa selama ini diabaikan; di .fa jenisnya DFA.
+  const p = Berkas.pisahkanBarisType(teksDfa.value);
+  teksDfa.value = p.teks;
+  dokumen.format = 'fa';
+  dokumen.jenis = 'DFA';
+  namaBerkas.value = Berkas.namaBerkas(namaBerkas.value, 'fa');
+  perbaruiWidget();
+  hasilKedaluwarsa();
+  periksa();
+  infoBerkasOk(
+    `Sekarang dokumen .fa dengan jenis DFA (${namaBerkas.value}).` +
+      (p.jumlah > 0 ? ' Baris type: di teks dihapus; jenis dipilih lewat pilihan jenis.' : '')
+  );
+});
+tombolJadikanDfa.addEventListener('click', () => {
+  dokumen.format = 'dfa';
+  dokumen.jenis = 'DFA';
+  namaBerkas.value = Berkas.namaBerkas(namaBerkas.value, 'dfa');
+  perbaruiWidget();
+  hasilKedaluwarsa();
+  periksa();
+  infoBerkasOk(`Sekarang dokumen .dfa (${namaBerkas.value}).`);
+});
+
 // ---------- pemeriksaan langsung saat mengetik ----------
 
 function tampilkanAnalisis(a) {
@@ -51,9 +152,9 @@ function tampilkanAnalisis(a) {
     return ganti(statusDfa, kotak('galat', '✖', 'Sintaks salah:', [a.syntaxError]));
   }
   if (a.errors.length > 0) {
-    return ganti(statusDfa, kotak('galat', '✖', 'Bukan DFA yang valid:', a.errors));
+    return ganti(statusDfa, kotak('galat', '✖', `Bukan ${a.type} yang valid:`, a.errors));
   }
-  const anak = [kotak('ok', '✔', 'DFA valid')];
+  const anak = [kotak('ok', '✔', `${a.type} valid`)];
   if (a.warnings.length > 0) anak.push(kotak('peringatan', '⚠', 'Peringatan:', a.warnings));
   ganti(statusDfa, ...anak);
 }
@@ -63,7 +164,7 @@ let nomorPermintaan = 0; // jawaban yang datang terlambat dari ketikan lama diab
 async function periksa() {
   const saya = ++nomorPermintaan;
   if (teksDfa.value.trim() === '') {
-    dfaTerakhir = null;
+    automataTerakhir = null;
     analisisTerakhir = null;
     gambarDiagram();
     return ganti(statusDfa, kotak('netral', 'ℹ', 'Belum ada definisi.'));
@@ -72,7 +173,7 @@ async function periksa() {
     const res = await fetch('/api/analisis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dfa: teksDfa.value }),
+      body: JSON.stringify(bodyDokumen()),
     });
     const data = await res.json();
     if (saya !== nomorPermintaan) return;
@@ -88,9 +189,9 @@ async function periksa() {
 
 // ---------- diagram state ----------
 
-// DFA terakhir yang berhasil dibaca (hasil parse dari server). Dipakai lagi saat
-// tata letak diganti, tanpa bertanya ke server.
-let dfaTerakhir = null;
+// Automata (DFA atau NFA) terakhir yang berhasil dibaca (hasil parse dari
+// server). Dipakai lagi saat tata letak diganti, tanpa bertanya ke server.
+let automataTerakhir = null;
 
 // Posisi hasil geser pengguna (sub tahap 5f), dipisah per tata letak:
 // nama tata letak -> Map(nama state -> {x, y}). Hanya hidup selama halaman
@@ -111,7 +212,7 @@ let gambarTerakhir = null;
 // Elemen <svg> dari DFA terakhir. `kotakTetap` (opsional) menahan bingkai gambar
 // selama menyeret, supaya diagram tidak bergeser di bawah kursor.
 function buatSvgDiagram(kotakTetap) {
-  const graf = Graf.buatGraf(dfaTerakhir);
+  const graf = Graf.buatGraf(automataTerakhir);
   const tataLetak = Graf.terapkanGeser(Graf.hitungTataLetak(graf, pilihTataLetak.value), geserTataLetakIni());
   gambarTerakhir = Gambar.susunGambar(graf, tataLetak);
   if (kotakTetap) gambarTerakhir.kotak = kotakTetap;
@@ -127,8 +228,8 @@ function gambarDiagram() {
   diagram.classList.remove('usang');
   tombolKembalikanPosisi.disabled = geserTataLetakIni().size === 0;
   gambarTerakhir = null;
-  if (!dfaTerakhir) return ganti(diagram, el('p', 'Diagram muncul setelah definisi DFA bisa dibaca.', 'keterangan'));
-  if (dfaTerakhir.states.length === 0) return ganti(diagram, el('p', 'Belum ada state untuk digambar.', 'keterangan'));
+  if (!automataTerakhir) return ganti(diagram, el('p', 'Diagram muncul setelah definisi bisa dibaca.', 'keterangan'));
+  if (automataTerakhir.states.length === 0) return ganti(diagram, el('p', 'Belum ada state untuk digambar.', 'keterangan'));
   const fokus = stateBerfokus();
   ganti(diagram, buatSvgDiagram());
   kembalikanFokus(fokus);
@@ -139,7 +240,7 @@ function gambarDiagram() {
 // belum benar") dibiarkan.
 function gambarUlangSvg(kotakTetap) {
   const lama = diagram.querySelector('svg');
-  if (!lama || !dfaTerakhir) return;
+  if (!lama || !automataTerakhir) return;
   const fokus = stateBerfokus();
   lama.replaceWith(buatSvgDiagram(kotakTetap));
   tombolKembalikanPosisi.disabled = geserTataLetakIni().size === 0;
@@ -226,17 +327,17 @@ tombolKembalikanPosisi.addEventListener('click', () => {
 let analisisTerakhir = null;
 function perbaruiDiagram(a) {
   analisisTerakhir = a;
-  if (a.dfa) {
-    dfaTerakhir = a.dfa;
+  if (a.automaton) {
+    automataTerakhir = a.automaton;
     gambarDiagram();
     if (a.errors.length > 0) {
-      diagram.appendChild(kotak('peringatan', '⚠', 'DFA belum valid, jadi diagram ini bisa belum lengkap.'));
+      diagram.appendChild(kotak('peringatan', '⚠', `${a.type} belum valid, jadi diagram ini bisa belum lengkap.`));
     }
     return;
   }
   // Sintaks salah (biasanya karena sedang mengetik): diagram terakhir dibiarkan,
   // tetapi dipudarkan dan diberi catatan supaya tidak dikira gambar terbaru.
-  if (!dfaTerakhir) return gambarDiagram();
+  if (!automataTerakhir) return gambarDiagram();
   gambarDiagram();
   diagram.classList.add('usang');
   diagram.appendChild(kotak('netral', 'ℹ', 'Sintaks belum benar. Diagram di atas dari definisi terakhir yang terbaca.'));
@@ -392,10 +493,38 @@ function tabelJejak(steps) {
   return tabel;
 }
 
+// Tabel jejak NFA: himpunan state per langkah (spesifikasi bagian 8.6).
+// Baris 0 adalah himpunan awal, ε-closure({q₀}).
+function tabelJejakNfa(r) {
+  const tabel = el('table');
+  const kepala = el('tr');
+  for (const h of ['No', 'Himpunan sebelum', 'Simbol', 'Himpunan sesudah']) kepala.appendChild(el('th', h));
+  tabel.appendChild(kepala);
+  const baris = (sel) => {
+    const tr = el('tr');
+    for (const isi of sel) tr.appendChild(el('td', isi));
+    tabel.appendChild(tr);
+  };
+  baris(['0', '(awal)', '', himpunan(r.start.states)]);
+  r.steps.forEach((s, i) => baris([String(i + 1), himpunan(s.from), s.symbol, himpunan(s.to)]));
+  return tabel;
+}
+
+function tampilkanSimulasiNfa(data) {
+  const r = data.result;
+  const status = r.accepted
+    ? kotak('ok', '✔', `DITERIMA: himpunan terakhir ${himpunan(r.finalStates)} memuat state akhir`)
+    : kotak('galat', '✖', `DITOLAK: himpunan terakhir ${himpunan(r.finalStates)} tidak memuat state akhir`);
+  status.classList.add('status-hasil');
+  ganti(hasil, status, el('h3', 'Jejak (himpunan state per langkah)'), tabelJejakNfa(r));
+  perbaruiDiagram({ syntaxError: null, type: data.type, errors: [], warnings: data.warnings, automaton: data.automaton });
+}
+
 function tampilkanSimulasi(data) {
   if (data.errors.length > 0) {
-    return ganti(hasil, kotak('galat', '✖', 'Tidak dijalankan: bukan DFA yang valid.', data.errors));
+    return ganti(hasil, kotak('galat', '✖', `Tidak dijalankan: bukan ${data.type} yang valid.`, data.errors));
   }
+  if (data.type === 'NFA') return tampilkanSimulasiNfa(data);
   const r = data.result;
   const status = r.accepted
     ? kotak('ok', '✔', `DITERIMA, berhenti di ${r.finalState}`)
@@ -405,8 +534,8 @@ function tampilkanSimulasi(data) {
 
   // Diagram digambar dari DFA yang baru saja disimulasikan, supaya animasi
   // pasti cocok dengan gambarnya.
-  jejak = { start: data.dfa.start, hasil: r, posisi: 0 };
-  perbaruiDiagram({ syntaxError: null, errors: [], warnings: data.warnings, dfa: data.dfa });
+  jejak = { start: data.automaton.start, hasil: r, posisi: 0 };
+  perbaruiDiagram({ syntaxError: null, type: data.type, errors: [], warnings: data.warnings, automaton: data.automaton });
   if (!kurangiGerak.matches) putarJejak();
 }
 
@@ -418,7 +547,7 @@ async function jalankan() {
     const res = await fetch('/api/simulasi', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dfa: teksDfa.value, input: input.value }),
+      body: JSON.stringify({ ...bodyDokumen(), input: input.value }),
     });
     const data = await res.json();
     if (data.error) {
@@ -432,7 +561,7 @@ async function jalankan() {
   }
 }
 
-// ---------- simpan dan buka file .dfa (di sisi browser) ----------
+// ---------- simpan dan buka file .fa / .dfa (di sisi browser) ----------
 
 function infoBerkasOk(teks) {
   ganti(infoBerkas, kotak('ok', '✔', teks));
@@ -442,11 +571,14 @@ function infoBerkasGalat(teks) {
   ganti(infoBerkas, kotak('galat', '✖', teks));
 }
 
-// Simpan: mengunduh isi kotak definisi sebagai file teks UTF-8.
+// Simpan: mengunduh isi kotak definisi sebagai file teks UTF-8, dengan format
+// dokumen saat ini. Dokumen .fa diberi baris type: sesuai pilihan jenis.
 function simpanBerkas() {
-  const nama = Berkas.namaBerkasDfa(namaBerkas.value);
+  const nama = Berkas.namaBerkas(namaBerkas.value, dokumen.format);
   namaBerkas.value = nama;
-  const blob = new Blob([Berkas.siapkanTeksSimpan(teksDfa.value)], { type: 'text/plain;charset=utf-8' });
+  const isi =
+    dokumen.format === 'fa' ? Berkas.teksSimpanFa(teksDfa.value, dokumen.jenis) : Berkas.siapkanTeksSimpan(teksDfa.value);
+  const blob = new Blob([isi], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -463,14 +595,13 @@ async function bukaBerkas(berkas) {
   if (!berkas) return;
   try {
     const teks = await berkas.text(); // di-decode sebagai UTF-8
+    const format = Berkas.formatDariNama(berkas.name);
+    if (!format) return infoBerkasGalat(`Tidak bisa membuka ${berkas.name}: file harus berekstensi .fa atau .dfa.`);
     const masalah = Berkas.periksaBerkas({ teks, ukuran: berkas.size });
     if (masalah) return infoBerkasGalat(`Tidak bisa membuka ${berkas.name}: ${masalah}.`);
-    teksDfa.value = teks;
-    namaBerkas.value = Berkas.namaBerkasDfa(berkas.name);
+    bukaDokumen(teks, format, berkas.name);
     pilihContoh.value = '';
-    hasilKedaluwarsa();
-    periksa();
-    infoBerkasOk(`Dibuka: ${berkas.name}.`);
+    infoBerkasOk(`Dibuka: ${berkas.name} (${dokumen.jenis}).`);
   } catch {
     infoBerkasGalat(`Tidak bisa membaca ${berkas.name}.`);
   }
@@ -506,11 +637,8 @@ async function muatDaftarContoh() {
     const res = await fetch('/api/contoh');
     if (!res.ok) throw new Error(`server menjawab ${res.status}`);
     const data = await res.json();
-    // Sementara (sampai sub tahap 6h-6i): halaman ini baru bisa menggambar dan
-    // menjalankan DFA dari file .dfa, jadi contoh .fa (NFA) belum ditampilkan.
-    data.contoh = data.contoh.filter((nama) => nama.endsWith('.dfa'));
     if (data.contoh.length === 0) {
-      return infoBerkasGalat('Daftar contoh kosong: tidak ada file .dfa di folder contoh server.');
+      return infoBerkasGalat('Daftar contoh kosong: tidak ada file .fa atau .dfa di folder contoh server.');
     }
     for (const nama of data.contoh) {
       const opsi = el('option', nama);
@@ -524,16 +652,26 @@ async function muatDaftarContoh() {
 
 pilihContoh.addEventListener('change', async () => {
   if (!pilihContoh.value) return;
-  const res = await fetch('/api/contoh/' + encodeURIComponent(pilihContoh.value));
-  teksDfa.value = await res.text();
-  namaBerkas.value = Berkas.namaBerkasDfa(pilihContoh.value);
+  const nama = pilihContoh.value;
+  const res = await fetch('/api/contoh/' + encodeURIComponent(nama));
+  bukaDokumen(await res.text(), Berkas.formatDariNama(nama), nama);
   ganti(infoBerkas);
-  hasilKedaluwarsa();
-  periksa();
 });
 
 teksDfa.addEventListener('input', () => {
   ganti(infoBerkas);
+  // Dokumen .fa: baris type: yang diketik/ditempel dipindah ke widget.
+  if (dokumen.format === 'fa') {
+    const p = Berkas.pisahkanBarisType(teksDfa.value);
+    if (p.jumlah > 0) {
+      const kursor = teksDfa.selectionStart;
+      teksDfa.value = p.teks;
+      teksDfa.selectionStart = teksDfa.selectionEnd = Math.min(kursor, p.teks.length);
+      dokumen.jenis = p.jenis;
+      perbaruiWidget();
+      infoBerkasOk(`Baris "type: ${p.jenis}" dipindah ke pilihan jenis automata.`);
+    }
+  }
   hasilKedaluwarsa();
   jadwalkanPeriksa();
 });
@@ -542,4 +680,5 @@ input.addEventListener('keydown', (e) => { if (e.key === 'Enter') jalankan(); })
 document.getElementById('tombol-jalankan').addEventListener('click', jalankan);
 
 muatDaftarContoh();
-periksa();
+// Saat halaman pertama kali dibuka: dokumen "NFA baru" (spesifikasi bagian 10).
+bukaDokumen(Berkas.TEMPLAT.NFA, 'fa', 'automata.fa');

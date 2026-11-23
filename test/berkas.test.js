@@ -60,3 +60,68 @@ test('hasil simpan lalu parse kembali sama (alur bolak-balik)', () => {
   const asli = 'states: q0 q1\nalphabet: 0\nstart: q0\naccept: q1\nq0 0 -> q1\nq1 0 -> q1';
   assert.deepEqual(parseDfa(siapkanTeksSimpan(asli)), parseDfa(asli));
 });
+
+// ---------- dokumen .fa dan .dfa (sub tahap 6h) ----------
+
+const B = require('../public/berkas');
+
+test('formatDariNama: .fa, .dfa (huruf besar juga), selain itu null', () => {
+  assert.equal(B.formatDariNama('a.fa'), 'fa');
+  assert.equal(B.formatDariNama('A.FA'), 'fa');
+  assert.equal(B.formatDariNama('a.dfa'), 'dfa');
+  assert.equal(B.formatDariNama('a.txt'), null);
+  assert.equal(B.formatDariNama('fa'), null);
+  assert.equal(B.formatDariNama(undefined), null);
+});
+
+test('namaBerkas: ekstensi mengikuti format dokumen', () => {
+  assert.equal(B.namaBerkas('genap.dfa', 'fa'), 'genap.fa');
+  assert.equal(B.namaBerkas('genap.fa', 'dfa'), 'genap.dfa');
+  assert.equal(B.namaBerkas('Genap.FA', 'fa'), 'Genap.fa');
+  assert.equal(B.namaBerkas('catatan.txt', 'fa'), 'catatan.txt.fa');
+  assert.equal(B.namaBerkas('mesin δ', 'dfa'), 'mesin δ.dfa');
+});
+
+test('namaBerkas: kosong atau tak berarti memakai automata.<format>; path aman', () => {
+  for (const x of ['', '  ', '.fa', '.dfa', '///', undefined]) assert.equal(B.namaBerkas(x, 'fa'), 'automata.fa', JSON.stringify(x));
+  assert.equal(B.namaBerkas('', 'dfa'), 'automata.dfa');
+  assert.ok(!/[\\/]/.test(B.namaBerkas('../x/y', 'fa')));
+});
+
+test('pisahkanBarisType: baris type: yang sah dipindah, jenis dari yang pertama', () => {
+  const p = B.pisahkanBarisType('# judul\ntype: DFA  # jenis\nstates: q0\n  type: NFA\n');
+  assert.deepEqual(p, { jenis: 'DFA', teks: '# judul\nstates: q0\n', jumlah: 2 });
+});
+
+test('pisahkanBarisType: nilai tak dikenal dan huruf kecil dibiarkan; tanpa type: jenis null', () => {
+  assert.deepEqual(B.pisahkanBarisType('type: PDA\ntype: nfa\nstates: q0'), {
+    jenis: null,
+    teks: 'type: PDA\ntype: nfa\nstates: q0',
+    jumlah: 0,
+  });
+  assert.deepEqual(B.pisahkanBarisType(''), { jenis: null, teks: '', jumlah: 0 });
+});
+
+test('pisahkanBarisType: CRLF tetap dikenali', () => {
+  assert.equal(B.pisahkanBarisType('type: NFA\r\nstates: q0\r\n').jenis, 'NFA');
+});
+
+test('teksSimpanFa: type: di baris pertama, lalu isi kotak definisi', () => {
+  assert.equal(B.teksSimpanFa('states: q0', 'NFA'), 'type: NFA\nstates: q0\n');
+  assert.equal(B.teksSimpanFa('', 'DFA'), 'type: DFA\n');
+});
+
+test('simpan .fa lalu buka lagi: jenis dan teks kembali sama', () => {
+  const { parseFa } = require('../src/parser');
+  const teks = 'states: q0 q1\nalphabet: 0\nstart: q0\naccept: q1\nq0 0 -> {q0, q1}\n';
+  const file = B.teksSimpanFa(teks, 'NFA');
+  assert.equal(parseFa(file, 'fa').type, 'NFA');
+  assert.deepEqual(B.pisahkanBarisType(file), { jenis: 'NFA', teks, jumlah: 1 });
+});
+
+test('TEMPLAT: NFA baru valid sebagai NFA, DFA baru valid sebagai DFA', () => {
+  const { periksaFa } = require('../src/fas');
+  assert.deepEqual(periksaFa(B.TEMPLAT.NFA, 'fa', 'NFA').errors, []);
+  assert.deepEqual(periksaFa(B.TEMPLAT.DFA, 'fa', 'DFA').errors, []);
+  assert.deepEqual(periksaFa(B.TEMPLAT.NFA, 'fa', 'DFA').errors.length, 2); // NFA baru bukan DFA (V6a)
+});

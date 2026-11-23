@@ -460,6 +460,17 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
 - Catatan: teks yang disalin dari kotak definisi tidak membawa baris
   `type:`. Jika ditempel ke file `.fa` di luar aplikasi, file itu dibaca
   sebagai NFA.
+- Untuk pemeriksaan dan simulasi, halaman mengirim teks kotak definisi apa
+  adanya bersama format dan jenis dari widget (field `type` di API), bukan
+  teks yang diberi baris `type:` di atasnya. Dengan begitu nomor baris di
+  pesan error tetap sesuai kotak definisi. Jika jenis diberikan dari luar,
+  baris `type: DFA`/`type: NFA` di teks ditolak (halaman selalu
+  memindahkannya ke widget lebih dulu); nilai lain dilaporkan seperti biasa.
+- "DFA baru" berisi satu state q0 dengan loop untuk 0 dan 1, karena DFA wajib
+  punya transisi untuk setiap simbol (V6); "NFA baru" sama dengan dokumen awal.
+- Membuka file selain `.fa` dan `.dfa` ditolak dengan pesan (sama dengan CLI).
+- "Jadikan .fa (type: DFA)" membuang baris `type:` yang sah dari teks `.dfa`
+  (selama ini diabaikan) dan memberi tahu pengguna.
 
 ## 11. Rencana perluasan lain (belum dikerjakan)
 
@@ -510,6 +521,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Halaman web (bagian 10): teks dikirim apa adanya dengan field `type` dari widget (bukan diberi baris `type:`); templat "DFA baru" (q0 dengan loop 0 dan 1); file selain `.fa`/`.dfa` ditolak saat dibuka; "Jadikan .fa" membuang baris `type:` dari teks `.dfa` | Nomor baris di pesan error tetap sesuai kotak definisi; DFA baru langsung valid; sama dengan CLI |
 | 2026-11-23 | CLI (bagian 9.4): perintah `ke-dfa` dan `ke-nfa`; nama hasil bawaan `<nama>-dfa.fa`/`<nama>-nfa.fa`; file yang sudah ada tidak ditimpa; hanya ekstensi `.fa`/`.dfa` yang diterima (sebelumnya file apa pun dibaca sebagai DFA) | Nama perintah berbahasa Indonesia dan mudah diingat; tidak ada hasil kerja yang hilang; ekstensi menentukan cara membaca |
 | 2026-11-23 | Konversi DFA -> NFA (bagian 9.2): DFA dari `.dfa` dengan nama/simbol yang tidak sah di `.fa` membuat konversi berhenti dengan pesan; state tak terjangkau yang juga dead ikut dibuang jika "buang dead state" dipilih; teks hasil menyebut dead state yang dibuang | Tidak menghasilkan file `.fa` yang rusak; definisi dead state berlaku sama untuk semua state |
 | 2026-11-23 | Nama file spesifikasi diganti dari `spesifikasi-dfa.md` menjadi `spesifikasi-fa.md` | Isinya mencakup DFA dan NFA, sejalan dengan ekstensi `.fa` |

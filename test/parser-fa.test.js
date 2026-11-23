@@ -222,3 +222,21 @@ test('semua contoh .dfa: parseFa(..., dfa) sama dengan parseDfa dan tanpa pering
     assert.deepEqual(h.warnings, [], nama);
   }
 });
+
+// ---------- jenis dari luar teks (sub tahap 6h, pilihan jenis di web) ----------
+
+test('opsi type: jenis dari luar teks, nomor baris tetap sesuai teks', () => {
+  assert.equal(parseFa(kepala, 'fa', { type: 'DFA' }).type, 'DFA');
+  assert.equal(parseFa(kepala, 'fa', { type: 'NFA' }).type, 'NFA');
+  assert.throws(() => parseFa(kepala + 'q0 0 -> q0 q1\n', 'fa', { type: 'NFA' }), /^Error: baris 5:/);
+});
+
+test('opsi type: baris type: sah di teks ditolak; nilai tak dikenal dilaporkan biasa', () => {
+  assert.throws(() => parseFa('type: NFA\n' + kepala, 'fa', { type: 'DFA' }), /baris 1: baris 'type:' tidak dipakai di sini, karena jenis automata sudah dipilih \(DFA\)/);
+  assert.throws(() => parseFa(kepala + 'type: PDA\n', 'fa', { type: 'NFA' }), /baris 5: type 'PDA' tidak dikenal/);
+});
+
+test('opsi type hanya DFA/NFA dan hanya untuk format fa', () => {
+  assert.throws(() => parseFa(kepala, 'dfa', { type: 'DFA' }), /hanya untuk format 'fa'/);
+  assert.throws(() => parseFa(kepala, 'fa', { type: 'PDA' }), /hanya boleh DFA atau NFA/);
+});

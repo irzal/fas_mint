@@ -156,3 +156,21 @@ test('analisis .dfa berisi type: NFA: peringatan parser ikut dikirim', async () 
   assert.equal(data.type, 'DFA');
   assert.match(data.warnings[0], /baris 'type: NFA' diabaikan/);
 });
+
+// ---------- field type (sub tahap 6h) ----------
+
+test('field type: jenis dari pilihan jenis, teks tanpa baris type:', async () => {
+  const teks = 'states: q0\nalphabet: 0 1\nstart: q0\naccept:\n';
+  assert.equal((await post('/api/analisis', { dfa: teks, format: 'fa', type: 'DFA' })).data.type, 'DFA');
+  const nfa = await post('/api/simulasi', { dfa: teks, format: 'fa', type: 'NFA', input: '01' });
+  assert.equal(nfa.data.type, 'NFA');
+  assert.deepEqual(nfa.data.result.finalStates, []);
+});
+
+test('field type tidak sah atau tanpa format fa dijawab 400', async () => {
+  for (const body of [{ dfa: 'x', format: 'fa', type: 'PDA' }, { dfa: 'x', format: 'dfa', type: 'DFA' }, { dfa: 'x', type: 'NFA' }]) {
+    const { status, data } = await post('/api/analisis', body);
+    assert.equal(status, 400, JSON.stringify(body));
+    assert.match(data.error, /"type" harus "DFA" atau "NFA"/);
+  }
+});

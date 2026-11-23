@@ -205,3 +205,26 @@ test('terapkanGeser: geser kosong dan Q kosong', () => {
   const kosong = hitungTataLetak(buatGraf(dfaDari([], '', [])), 'berlapis');
   assert.equal(terapkanGeser(kosong, new Map([['q0', { x: 1, y: 1 }]])).posisi.size, 0);
 });
+
+// ---------- NFA (sub tahap 6h) ----------
+
+test('buatGraf NFA: satu panah per tujuan, label simbol digabung, ε sebagai label', () => {
+  const nfa = {
+    states: ['q0', 'q1', 'q2'],
+    alphabet: ['0'],
+    start: 'q0',
+    accept: ['q2'],
+    transitions: [
+      { from: 'q0', symbol: '0', to: ['q0', 'q1'], line: 5 },
+      { from: 'q0', symbol: 'ε', to: ['q1'], line: 6 },
+      { from: 'q1', symbol: '0', to: [], line: 7 },
+      { from: 'q1', symbol: '0', to: ['q2', 'qx'], line: 8 },
+    ],
+  };
+  const { nodes, edges } = buatGraf(nfa);
+  assert.deepEqual(
+    edges.map((e) => `${e.from}>${e.to}:${e.symbols.join(',')}${e.loop ? ' loop' : ''}`),
+    ['q0>q0:0 loop', 'q0>q1:0,ε', 'q1>q2:0']
+  );
+  assert.deepEqual(nodes.map((n) => [n.id, n.terjangkau]), [['q0', true], ['q1', true], ['q2', true]]);
+});

@@ -35,9 +35,11 @@
    *   - bolakBalik: ada sisi sebaliknya (to -> from); penggambar melengkungkannya
    *     agar tidak bertumpuk.
    * Transisi yang menyebut state di luar `states` dilewati (DFA belum valid).
+   * Untuk NFA, `to` berupa daftar state: satu panah dibuat untuk setiap tujuan,
+   * dan ε-transisi digambar sebagai panah berlabel 'ε'.
    *
    * @param {{ states: string[], start: string, accept: string[],
-   *   transitions: { from: string, symbol: string, to: string }[] }} dfa
+   *   transitions: { from: string, symbol: string, to: string|string[] }[] }} dfa
    * @returns {{ nodes: object[], edges: object[] }}
    */
   function buatGraf(dfa) {
@@ -48,16 +50,19 @@
     const edges = [];
     const peta = new Map(); // from -> Map(to -> sisi)
     for (const t of dfa.transitions) {
-      if (!ada.has(t.from) || !ada.has(t.to)) continue;
-      if (!peta.has(t.from)) peta.set(t.from, new Map());
-      const ke = peta.get(t.from);
-      let sisi = ke.get(t.to);
-      if (!sisi) {
-        sisi = { from: t.from, to: t.to, symbols: [], loop: t.from === t.to, bolakBalik: false };
-        ke.set(t.to, sisi);
-        edges.push(sisi);
+      // DFA: `to` satu nama; NFA: `to` daftar nama (boleh kosong).
+      for (const tujuan of Array.isArray(t.to) ? t.to : [t.to]) {
+        if (!ada.has(t.from) || !ada.has(tujuan)) continue;
+        if (!peta.has(t.from)) peta.set(t.from, new Map());
+        const ke = peta.get(t.from);
+        let sisi = ke.get(tujuan);
+        if (!sisi) {
+          sisi = { from: t.from, to: tujuan, symbols: [], loop: t.from === tujuan, bolakBalik: false };
+          ke.set(tujuan, sisi);
+          edges.push(sisi);
+        }
+        if (!sisi.symbols.includes(t.symbol)) sisi.symbols.push(t.symbol);
       }
-      if (!sisi.symbols.includes(t.symbol)) sisi.symbols.push(t.symbol);
     }
     for (const sisi of edges) {
       sisi.bolakBalik = !sisi.loop && peta.get(sisi.to)?.has(sisi.from) === true;

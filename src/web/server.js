@@ -128,7 +128,19 @@ function formatDariBody(data, res) {
   return null;
 }
 
-// POST /api/simulasi  body: { "dfa": "<isi file>", "input": "0101", "format"?: "fa"|"dfa" }
+// Field "type" (opsional, hanya dengan format "fa"): jenis automata yang dipilih
+// di luar teks, mis. lewat pilihan jenis di halaman web yang menyembunyikan
+// baris type: (spesifikasi bagian 10). Teks dikirim apa adanya, jadi nomor
+// baris di pesan error tetap tepat. Jika tidak sah, menjawab 400 dan
+// mengembalikan false.
+function jenisDariBody(data, format, res) {
+  if (data.type === undefined) return true;
+  if (format === 'fa' && (data.type === 'DFA' || data.type === 'NFA')) return true;
+  kirimJson(res, 400, { error: 'field "type" harus "DFA" atau "NFA", dan hanya dengan format "fa"' });
+  return false;
+}
+
+// POST /api/simulasi  body: { "dfa": "<isi file>", "input": "0101", "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA" }
 // 200: { type, errors, warnings, automaton, dfa, result }
 //      (dfa = automaton, dipertahankan untuk klien lama; result berbentuk jejak
 //      DFA atau NFA sesuai type, atau null jika ada error)
@@ -138,24 +150,24 @@ async function simulasi(req, res) {
   const data = await bacaJson(req, res, 'dfa', 'input');
   if (!data) return;
   const format = formatDariBody(data, res);
-  if (!format) return;
+  if (!format || !jenisDariBody(data, format, res)) return;
   try {
-    const h = jalankanFa(data.dfa, format, data.input);
+    const h = jalankanFa(data.dfa, format, data.input, data.type);
     kirimJson(res, 200, { ...h, dfa: h.automaton });
   } catch (err) {
     kirimJson(res, 400, { error: err.message, position: err.position });
   }
 }
 
-// POST /api/analisis  body: { "dfa": "<isi file>", "format"?: "fa"|"dfa" }
+// POST /api/analisis  body: { "dfa": "<isi file>", "format"?: "fa"|"dfa", "type"?: "DFA"|"NFA" }
 // Pemeriksaan tanpa simulasi (untuk pratinjau saat mengetik). Selalu 200:
 // { syntaxError, type, errors, warnings, automaton, dfa }
 async function analisisDfa(req, res) {
   const data = await bacaJson(req, res, 'dfa');
   if (!data) return;
   const format = formatDariBody(data, res);
-  if (!format) return;
-  const h = analisisFa(data.dfa, format);
+  if (!format || !jenisDariBody(data, format, res)) return;
+  const h = analisisFa(data.dfa, format, data.type);
   kirimJson(res, 200, { ...h, dfa: h.automaton });
 }
 

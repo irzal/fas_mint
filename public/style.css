@@ -102,3 +102,15 @@ tr.aktif td { background: #fff3c4; font-weight: 700; }
   button { min-height: 44px; }
   .tombol-jejak button { flex: 1 1 auto; }
 }
+
+/* Dokumen .fa/.dfa dan jenis automata (tahap 6, spesifikasi bagian 10) */
+.menu-dokumen { display: flex; flex-wrap: wrap; gap: 8px; }
+.menu-dokumen button { margin-top: 0; }
+#widget-jenis { margin: 12px 0 0; padding: 6px 12px 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+#widget-jenis legend { font-weight: 600; padding: 0 4px; }
+#widget-jenis label { display: inline-flex; align-items: center; gap: 4px; margin: 0 16px 0 0; font-weight: 400; }
+#widget-jenis input { width: auto; }
+#widget-jenis:disabled label { color: #555; }
+#keterangan-jenis { margin: 4px 0 0; font-size: 0.9rem; color: #555; }
+/* Baris tombol ganti format disembunyikan jika semua tombolnya tersembunyi. */
+.aksi-berkas:not(:has(> :not([hidden]))) { display: none; }
