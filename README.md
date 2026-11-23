@@ -134,7 +134,7 @@ CLI dan web.
 
 | Sub tahap | Isi | Status |
 |---|---|---|
-| 6a | Parser `.fa`: baris `type:` (baris bermakna pertama, nilai DFA/NFA), string kosong `ε`/`eps`/`λ`/`lam`, notasi himpunan `{q0, q1}` dan `{}`, aturan nama state `.fa` (tanpa `{ }`, koma hanya di dalam kurung siku); `.dfa` tetap seperti sekarang, baris `type:` diabaikan (selain `type: DFA` diberi peringatan) | belum |
+| 6a | Parser `.fa`: baris `type:` (baris bermakna pertama, nilai DFA/NFA), string kosong `ε`/`eps`/`λ`/`lam`, notasi himpunan `{q0, q1}` dan `{}`, aturan nama state `.fa` (tanpa `{ }`, koma hanya di dalam kurung siku); `.dfa` tetap seperti sekarang, baris `type:` diabaikan (selain `type: DFA` diberi peringatan). Fungsi `parseFa(teks, format)` di `src/parser.js`; `parseDfa` tetap untuk `.dfa` | selesai (tes `test/parser-fa.test.js`) |
 | 6b | Validator NFA: V1-V5 (V4 menerima tulisan string kosong), `type:` tak dikenal = error, tujuan ganda digabung + peringatan, W1 dengan ε-transisi; `.fa` ber-`type: DFA` memakai V1-V6b dan menolak `{...}` dan ε | belum |
 | 6c | Simulator NFA: ε-closure, himpunan state per langkah, jejak `{ accepted, start, steps: [{ from, symbol, moved, edges, to, epsilonEdges }], finalStates }` | belum |
 | 6d | Konversi NFA -> DFA (konstruksi subset, hanya himpunan terjangkau): nama `[q0,q1]` dan `[]`, deteksi tabrakan nama, tabel langkah demi langkah dan tabel transisi subset | belum |
