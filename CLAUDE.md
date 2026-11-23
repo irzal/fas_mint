@@ -27,11 +27,11 @@ Mahasiswa S1 yang baru belajar DFA. Mereka harus bisa membaca file `.dfa` dan la
 
 ## Keputusan yang sudah diambil
 - Format file: teks biasa, satu baris satu informasi (bukan JSON). Rincian lengkap ada di [`spesifikasi-dfa.md`](spesifikasi-dfa.md). File itu adalah acuan utama.
-- Ekstensi file: `.dfa`
+- Ekstensi file: `.dfa` untuk DFA. NFA kelak memakai `.fa` (DFA boleh juga ditulis di `.fa`); hasil konversi NFA -> DFA disimpan sebagai `.dfa`. Rincian di `spesifikasi-dfa.md` bagian 8.
 - Pesan error memakai notasi buku teks, misalnya `δ(q1, 1) belum didefinisikan`.
 - Teknologi: Node.js, tanpa library eksternal untuk parser, validator, dan simulator. Tes memakai test runner bawaan Node (`node --test`).
 - Kode dipisah per modul (`parser`, `validator`, `simulator`, `cli`) agar bisa dipakai ulang oleh antarmuka web nanti.
-- Hanya DFA dulu. NFA dan ε-transisi belum dikerjakan, tetapi format dijaga agar bisa diperluas tanpa merusak file lama.
+- Hanya DFA dulu. NFA dan ε-transisi belum dikerjakan (direncanakan sebagai tahap 6, bersama konversi NFA -> DFA yang wajib ada), tetapi format dijaga agar bisa diperluas tanpa merusak file lama.
 
 ## Cara Claude bekerja di project ini
 - Gunakan Bahasa Indonesia. Istilah teknis boleh dalam bahasa Inggris jika memang itu istilah bakunya (misalnya parser, trace).

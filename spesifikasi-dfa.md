@@ -154,10 +154,31 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
 
 ## 8. Rencana perluasan (belum dikerjakan)
 
-- NFA: satu baris `asal simbol -> tujuan` boleh muncul berkali-kali,
-  dan simbol `ε` diizinkan.
-- Penanda jenis di baris pertama, misalnya `type: DFA`, supaya parser tahu
-  jenis automata yang sedang dibaca. File lama tanpa penanda dianggap DFA.
+- NFA (tahap 6, sudah diputuskan, belum dikerjakan):
+  - Satu pasangan (state, simbol) boleh punya banyak transisi atau tidak sama
+    sekali, dan simbol `ε` diizinkan.
+  - Ekstensi file NFA adalah `.fa` (finite automaton). Karena DFA adalah kasus
+    khusus NFA, DFA juga boleh ditulis di file `.fa`; isinya dibaca menurut
+    aturan NFA.
+  - File `.dfa` tetap khusus DFA dengan aturan V1-V6b seperti sekarang.
+  - Konversi NFA -> DFA (konstruksi subset) wajib ada bersama NFA, tidak
+    boleh menyusul. Hasilnya disimpan sebagai file `.dfa`, supaya jelas
+    bahwa itu DFA.
+  - Fitur mengubah file `.dfa` menjadi `.fa` (setiap DFA adalah NFA, jadi
+    isinya tetap sah sebagai NFA).
+  - Perbedaan utama kedua format: `.dfa` lebih ketat, karena tiap pasangan
+    (state, simbol) wajib punya tepat satu tujuan (V6). `.fa` lebih longgar:
+    boleh banyak tujuan, boleh tidak ada, dan boleh ε. Karena itu `.dfa` ke
+    `.fa` selalu bisa langsung, sedangkan `.fa` ke `.dfa` harus lewat
+    konversi (konstruksi subset).
+  - Belum diputuskan: (a) apakah baris penanda jenis seperti `type: NFA`
+    masih perlu, atau jenis cukup ditentukan dari ekstensi file (di halaman
+    web: dari nama file); (b) cara menulis ε di file (`ε` saja, atau juga
+    `eps`); (c) bentuk jejak simulasi NFA (himpunan state per langkah);
+    (d) penamaan state hasil konversi, misalnya `{q0,q1}` dan `∅` untuk
+    dead state (keduanya sah sebagai nama state menurut bagian 4); (e)
+    apakah langkah konstruksi subset (tabel himpunan state, ε-closure)
+    ditampilkan untuk mahasiswa.
 - Posisi node untuk visualisasi web, misalnya `layout: q0 100 80`.
 - Konfigurasi gambar graf transisi (tata letak bawaan, posisi node, tampilan)
   di file terpisah, mirip CSS terhadap HTML, sehingga file `.dfa` tetap hanya
@@ -199,6 +220,7 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | NFA (tahap 6): ekstensi `.fa`; DFA boleh juga ditulis di `.fa` karena DFA kasus khusus NFA; `.dfa` tetap khusus DFA. Konversi NFA -> DFA wajib ada bersama NFA dan hasilnya disimpan sebagai `.dfa`. Ada fitur mengubah `.dfa` menjadi `.fa`. Rincian yang belum diputuskan dicatat di bagian 8 | NFA generalisasi DFA, jadi satu format `.fa` cukup untuk keduanya; ekstensi `.dfa` menjamin isinya DFA |
 | 2026-11-23 | Menggeser state (sub tahap 5f): posisi hasil geser disimpan sebagai lapisan data tersendiri (nama state -> posisi), terpisah per tata letak, dan menimpa posisi bawaan lewat `terapkanGeser`. Posisi tetap berlaku saat teks `.dfa` diubah selama nama statenya masih ada di Q; tombol "Kembalikan posisi" menghapusnya untuk tata letak yang sedang dipakai. Selain diseret (mouse/sentuh), state bisa dipilih dengan Tab dan digeser dengan tombol panah (10 piksel, Shift: 1 piksel) | Lapisan data yang sama kelak bisa disimpan ke file konfigurasi gambar (bagian 8); menyunting teks tidak menghapus hasil geser; tetap bisa dipakai tanpa mouse |
 | 2026-11-23 | Animasi jejak (sub tahap 5d): jejak dilihat sebagai posisi 0..n (0 = di q₀, belum membaca simbol; k = sesudah langkah ke-k). Yang disorot bersamaan: state aktif, panah yang baru dipakai, simbol yang baru dibaca, dan baris tabel jejak. Teks memakai notasi `δ(p, a) = q`; di akhir ditulis `q ∈ F: DITERIMA` atau `q ∉ F: DITOLAK`. Diputar otomatis satu langkah per detik setelah Jalankan, kecuali jika pengguna meminta gerak dikurangi (prefers-reduced-motion); tombol Awal, Mundur, Putar/Jeda, Maju. Animasi berhenti jika definisi atau input berubah | Mahasiswa bisa mencocokkan tiap langkah δ dengan diagram dan tabel; hasil akhir tidak hanya ditandai warna |
 | 2026-11-23 | Notasi diagram state (sub tahap 5c): q₀ ditunjuk panah dari kiri; state akhir = lingkaran ganda; δ(p, a) = p = loop; simbol dengan asal dan tujuan sama digabung dalam satu panah berlabel `a, b`; p -> q dan q -> p melengkung ke sisi berlawanan; panah yang akan menembus state lain dibuat melengkung; state tak terjangkau digambar putus-putus | Sama dengan notasi buku teks; tanda tak terjangkau sejalan dengan peringatan W1 |
