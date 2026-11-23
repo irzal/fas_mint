@@ -125,6 +125,27 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
 | nanti | Konfigurasi gambar graf di file terpisah (lihat spesifikasi bagian 11) | belum |
 | nanti | Simpan per pengguna (akun) di server, selain simpan ke komputer sendiri di 5g. Butuh identitas pengguna, penyimpanan di server, dan perlindungan akses | belum |
 
+## Rencana tahap 6 (NFA dan konversi)
+
+Acuan: [`spesifikasi-fa.md`](spesifikasi-fa.md) bagian 8 sampai 10. Urutan
+dikerjakan dari atas; setiap sub tahap disertai tes, termasuk kasus tepi.
+Logika (6a sampai 6e) tetap tanpa library eksternal dan dipakai bersama oleh
+CLI dan web.
+
+| Sub tahap | Isi | Status |
+|---|---|---|
+| 6a | Parser `.fa`: baris `type:` (baris bermakna pertama, nilai DFA/NFA), string kosong `ε`/`eps`/`λ`/`lam`, notasi himpunan `{q0, q1}` dan `{}`, aturan nama state `.fa` (tanpa `{ }`, koma hanya di dalam kurung siku); `.dfa` tetap seperti sekarang, baris `type:` diabaikan (selain `type: DFA` diberi peringatan) | belum |
+| 6b | Validator NFA: V1-V5 (V4 menerima tulisan string kosong), `type:` tak dikenal = error, tujuan ganda digabung + peringatan, W1 dengan ε-transisi; `.fa` ber-`type: DFA` memakai V1-V6b dan menolak `{...}` dan ε | belum |
+| 6c | Simulator NFA: ε-closure, himpunan state per langkah, jejak `{ accepted, start, steps: [{ from, symbol, moved, edges, to, epsilonEdges }], finalStates }` | belum |
+| 6d | Konversi NFA -> DFA (konstruksi subset, hanya himpunan terjangkau): nama `[q0,q1]` dan `[]`, deteksi tabrakan nama, tabel langkah demi langkah dan tabel transisi subset | belum |
+| 6e | Konversi DFA -> NFA: tujuan ditulis `{p}`, pilihan buang dead state (state awal tidak pernah dibuang), tabel pemetaan | belum |
+| 6f | CLI: membaca `.fa` dan `.dfa`, jejak NFA, perintah konversi kedua arah (mencetak tabel dan menulis file hasil `.fa`) | belum |
+| 6g | Contoh `.fa` (NFA, NFA dengan ε, DFA ber-`type: DFA`, contoh tidak valid) dan server/API untuk `.fa` (daftar contoh, analisis, simulasi) | belum |
+| 6h | Web, dokumen: widget jenis automata (terkunci untuk `.dfa`), baris `type:` disembunyikan dari kotak definisi, menu "DFA baru"/"NFA baru", dokumen awal NFA satu state, Simpan sesuai format dokumen, menu "Jadikan .fa (type: DFA)"/"Jadikan .dfa" | belum |
+| 6i | Web, NFA: diagram dengan ε-transisi, tabel jejak NFA (kolom hasil δ dan ε-closure terpisah), animasi yang menyorot beberapa state dan panah sekaligus | belum |
+| 6j | Web, konversi: menu konversi kedua arah, tabel langkah/pemetaan, tampilan hasil konversi (masih perlu diputuskan, spesifikasi bagian 13) | belum |
+| 6k | Penyelesaian: layar kecil dan aksesibilitas untuk bagian baru, README, contoh lama tetap jalan | belum |
+
 ## Status
 
 - Sudah jalan: `parseDfa`, `validateDfa`, `simulate`, server web, API, dan
@@ -135,4 +156,6 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
   dipakai, simbol yang dibaca, dan baris tabel jejak disorot bersamaan.
 - Sudah jalan di web: menggeser state di diagram (seret, atau Tab lalu tombol
   panah). Posisi tetap saat teks diubah, selama nama statenya masih ada.
-- Tahap 5 selesai. Yang masih "nanti" ada di tabel di atas.
+- Tahap 5 selesai. Yang masih "nanti" ada di tabel tahap 5.
+- Tahap 6 (NFA dan konversi): sudah diputuskan di spesifikasi, belum
+  dikerjakan. Rencananya di tabel di atas.

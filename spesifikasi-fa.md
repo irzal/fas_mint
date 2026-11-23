@@ -524,3 +524,7 @@ adalah bagian 12 ini.
   W1 dengan ε)? Disetujui (lihat riwayat keputusan)
 - [x] Dokumen saat halaman web pertama kali dibuka? NFA baru satu state tanpa
   transisi, Σ = {0, 1}, F kosong (bagian 10)
+- [ ] Halaman web: hasil konversi (NFA -> DFA maupun DFA -> NFA) ditampilkan
+  bagaimana? Misalnya menggantikan isi kotak definisi, atau dibuka sebagai
+  dokumen baru sehingga automata asal tetap ada. Dibahas saat sub tahap
+  konversi di web (catatan ini sempat hilang saat penataan ulang)
