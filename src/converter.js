@@ -1,10 +1,11 @@
 // Konversi antar automata. Acuan: spesifikasi-fa.md bagian 9.
 //   nfaToDfa: NFA -> DFA dengan konstruksi subset (bagian 9.1)
+//   dfaToNfa: DFA -> NFA, δ_N(q, a) = {δ_D(q, a)} (bagian 9.2)
 //
 // Konversi memakai epsilonClosure dan move yang sama dengan simulator NFA,
 // jadi langkah konversi dan langkah simulasi selalu cocok.
 
-const { parseFa, EPSILON } = require('./parser');
+const { parseFa, EPSILON, SIMBOL_DICADANGKAN_FA, alasanNamaTakSahFa } = require('./parser');
 const { epsilonClosure, move } = require('./simulator');
 
 // Nama state DFA hasil konstruksi subset (bagian 9.1): nama-nama state NFA
@@ -156,4 +157,113 @@ function tulisTeksDfa(table, alfabet) {
   return baris.join('\n') + '\n';
 }
 
-module.exports = { nfaToDfa, namaHimpunan };
+// ===================== DFA -> NFA (bagian 9.2) =====================
+
+const ALASAN_DEAD_STATE = 'dari state ini tidak ada jalan ke state akhir';
+
+/**
+ * Dead state: state yang tidak punya jalan ke state akhir mana pun.
+ * Dicari dari belakang: mulai dari F, ikuti transisi secara terbalik; state
+ * yang tidak tercapai dengan cara itu adalah dead state. Urutan hasil
+ * mengikuti baris `states:`.
+ *
+ * @param {import("./parser").Dfa} dfa
+ * @returns {string[]}
+ */
+function findDeadStates(dfa) {
+  const asalDari = new Map(); // tujuan -> daftar asal (transisi terbalik)
+  for (const t of dfa.transitions) {
+    if (!asalDari.has(t.to)) asalDari.set(t.to, []);
+    asalDari.get(t.to).push(t.from);
+  }
+  const bisaKeF = new Set(dfa.accept);
+  const antrean = [...bisaKeF];
+  while (antrean.length > 0) {
+    for (const p of asalDari.get(antrean.shift()) || []) {
+      if (!bisaKeF.has(p)) {
+        bisaKeF.add(p);
+        antrean.push(p);
+      }
+    }
+  }
+  return [...new Set(dfa.states)].filter((q) => !bisaKeF.has(q));
+}
+
+/**
+ * Hasil konversi DFA -> NFA.
+ *
+ * @typedef {object} HasilDfaToNfa
+ * @property {string} text  isi file .fa (dengan `type: NFA`)
+ * @property {import("./parser").Nfa} nfa  objek NFA (hasil parse `text`)
+ * @property {{ from: string, symbol: string, dfaTo: string, nfaTo: string[]|null,
+ *   removed: boolean }[]} mapping
+ *   tabel pemetaan, satu baris per transisi DFA: δ(from, symbol) = dfaTo
+ *   menjadi δ(from, symbol) = {nfaTo}; `removed` true (dan nfaTo null) jika
+ *   baris itu dihapus karena dead state dibuang
+ * @property {{ state: string, reason: string }[]} removedStates
+ *   dead state yang dibuang beserta alasannya (kosong jika tidak dibuang)
+ */
+
+/**
+ * Setiap DFA adalah NFA: δ_N(q, a) = {δ_D(q, a)}. Q, Σ, q₀, F tidak berubah.
+ * Setiap transisi ditulis dengan kurung kurawal (`q0 0 -> {q1}`), supaya
+ * terlihat bahwa hasil δ berubah dari satu state menjadi himpunan state.
+ *
+ * Pilihan `removeDeadStates`: dead state (tidak punya jalan ke state akhir)
+ * dibuang beserta semua panah dari dan ke state itu. Bahasa yang diterima
+ * tidak berubah, karena di NFA transisi yang tidak ditulis berarti δ = ∅.
+ * State awal tidak pernah dibuang, juga jika bahasanya ∅. State tak terjangkau
+ * yang masih punya jalan ke state akhir tidak dibuang (keputusan W1).
+ *
+ * @param {import("./parser").Dfa} dfa DFA yang sudah lolos validator
+ * @param {{ removeDeadStates?: boolean }} [opsi]
+ * @returns {HasilDfaToNfa}
+ * @throws {Error} jika nama state atau simbol DFA (dari file .dfa lama) tidak
+ *   sah di file .fa
+ */
+function dfaToNfa(dfa, opsi = {}) {
+  // File .dfa lama boleh memakai nama/simbol yang tidak sah di .fa.
+  for (const q of dfa.states) {
+    const alasan = alasanNamaTakSahFa(q);
+    if (alasan) {
+      throw new Error(`konversi gagal: nama state '${q}' ${alasan} di file .fa; ganti namanya dulu`);
+    }
+  }
+  for (const a of dfa.alphabet) {
+    if (SIMBOL_DICADANGKAN_FA.includes(a)) {
+      throw new Error(
+        `konversi gagal: simbol '${a}' dicadangkan untuk string kosong di file .fa; ganti simbolnya dulu`
+      );
+    }
+  }
+
+  const dibuang = new Set(
+    opsi.removeDeadStates ? findDeadStates(dfa).filter((q) => q !== dfa.start) : []
+  );
+  const mapping = dfa.transitions.map((t) => {
+    const removed = dibuang.has(t.from) || dibuang.has(t.to);
+    return { from: t.from, symbol: t.symbol, dfaTo: t.to, nfaTo: removed ? null : [t.to], removed };
+  });
+  const removedStates = [...dibuang].map((state) => ({ state, reason: ALASAN_DEAD_STATE }));
+
+  const tetap = (q) => !dibuang.has(q);
+  const baris = [
+    'type: NFA',
+    '# hasil konversi DFA -> NFA',
+    `states: ${dfa.states.filter(tetap).join(' ')}`,
+    `alphabet: ${dfa.alphabet.join(' ')}`.trimEnd(),
+    `start: ${dfa.start}`,
+    `accept: ${dfa.accept.filter(tetap).join(' ')}`.trimEnd(),
+  ];
+  if (removedStates.length > 0) {
+    baris.push(`# dead state dibuang: ${removedStates.map((r) => r.state).join(' ')} (${ALASAN_DEAD_STATE})`);
+  }
+  const transisi = mapping.filter((m) => !m.removed).map((m) => `${m.from} ${m.symbol} -> {${m.nfaTo.join(', ')}}`);
+  if (transisi.length > 0) baris.push('', ...transisi);
+  const text = baris.join('\n') + '\n';
+
+  const nfa = parseFa(text, 'fa').automaton;
+  return { text, nfa, mapping, removedStates };
+}
+
+module.exports = { nfaToDfa, namaHimpunan, dfaToNfa, findDeadStates };

@@ -382,7 +382,15 @@ berubah. Algoritma ini terpisah dari konstruksi subset. Hasilnya dokumen
   tidak ada jalan ke state akhir"). State awal tidak pernah dibuang, juga
   jika bahasanya ∅.
 - State tak terjangkau tidak dibuang otomatis (sama dengan keputusan W1:
-  penghapusan hanya manual).
+  penghapusan hanya manual). Tetapi state tak terjangkau yang juga dead
+  state ikut dibuang jika pilihan "buang dead state" dipakai, karena ia
+  memenuhi definisi dead state.
+- Teks hasil memuat komentar yang menyebut dead state yang dibuang, mis.
+  `# dead state dibuang: mati (dari state ini tidak ada jalan ke state akhir)`.
+- DFA dari file `.dfa` lama boleh memakai nama state atau simbol yang tidak
+  sah di `.fa` (nama berisi `{ }` atau koma di luar kurung siku, simbol `λ`).
+  Konversi berhenti dengan pesan, mis. `konversi gagal: nama state 'a,b' ...
+  di file .fa; ganti namanya dulu`, bukan menghasilkan file yang rusak.
 - Tabel pemetaan ditampilkan, satu baris per transisi:
   `δ(q0, 0) = q1` -> `δ(q0, 0) = {q1}`, ditambah baris yang dihapus jika
   dead state dibuang. CLI juga mencetak tabel ini.
@@ -489,6 +497,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Konversi DFA -> NFA (bagian 9.2): DFA dari `.dfa` dengan nama/simbol yang tidak sah di `.fa` membuat konversi berhenti dengan pesan; state tak terjangkau yang juga dead ikut dibuang jika "buang dead state" dipilih; teks hasil menyebut dead state yang dibuang | Tidak menghasilkan file `.fa` yang rusak; definisi dead state berlaku sama untuk semua state |
 | 2026-11-23 | Nama file spesifikasi diganti dari `spesifikasi-dfa.md` menjadi `spesifikasi-fa.md` | Isinya mencakup DFA dan NFA, sejalan dengan ekstensi `.fa` |
 | 2026-11-23 | Halaman web pertama kali dibuka dengan dokumen "NFA baru": `states: q0`, `alphabet: 0 1`, `start: q0`, `accept:` (tanpa transisi) | Langsung valid sebagai NFA (sebagai DFA melanggar V6a); titik awal untuk menambah state dan transisi |
 | 2026-11-23 | Validasi NFA (bagian 8.5): V1-V5 tetap berlaku (V4 menerima juga ε/eps/λ/lam); nilai `type:` tak dikenal di `.fa` adalah error; W1 menghitung ε-transisi sebagai jalan | Hanya V6 yang khas DFA; jenis file harus pasti; state yang dicapai lewat ε memang terjangkau |

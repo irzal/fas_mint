@@ -79,7 +79,7 @@ function periksaSimbol(simbol, nomor, formatFa) {
   if ([...simbol].length !== 1) {
     throw new Error(`baris ${nomor}: simbol '${simbol}' harus tepat satu karakter`);
   }
-  const dilarang = formatFa ? ['#', 'ε', 'λ'] : ['#', 'ε'];
+  const dilarang = formatFa ? ['#', ...SIMBOL_DICADANGKAN_FA] : ['#', 'ε'];
   if (dilarang.includes(simbol)) {
     throw new Error(`baris ${nomor}: simbol '${simbol}' tidak boleh dipakai di alfabet`);
   }
@@ -96,17 +96,25 @@ function periksaNamaState(nama, nomor, formatFa) {
     throw new Error(`baris ${nomor}: nama state '${nama}' tidak boleh mengandung '->'`);
   }
   if (!formatFa) return;
+  const alasan = alasanNamaTakSahFa(nama);
+  if (alasan) throw new Error(`baris ${nomor}: nama state '${nama}' ${alasan}`);
+}
+
+// Aturan nama state khusus .fa (bagian 8.4 butir 4). Mengembalikan alasan
+// jika nama tidak sah, atau null jika sah. Dipakai juga oleh konversi
+// DFA -> NFA untuk memeriksa nama dari file .dfa lama.
+function alasanNamaTakSahFa(nama) {
   if (nama.includes('{') || nama.includes('}')) {
-    throw new Error(
-      `baris ${nomor}: nama state '${nama}' tidak boleh mengandung '{' atau '}' (kurung kurawal khusus untuk himpunan state)`
-    );
+    return "tidak boleh mengandung '{' atau '}' (kurung kurawal khusus untuk himpunan state)";
   }
   if (adaKomaDiLuarKurungSiku(nama)) {
-    throw new Error(
-      `baris ${nomor}: nama state '${nama}' tidak boleh mengandung koma di luar kurung siku (contoh nama yang boleh: [q0,q1])`
-    );
+    return 'tidak boleh mengandung koma di luar kurung siku (contoh nama yang boleh: [q0,q1])';
   }
+  return null;
 }
+
+// Simbol yang dicadangkan untuk string kosong di file .fa (bagian 8.4 butir 2).
+const SIMBOL_DICADANGKAN_FA = ['ε', 'λ'];
 
 // Menelusuri karakter satu per satu sambil menghitung kedalaman kurung siku.
 //   'q0,q1'   -> true   (koma di kedalaman 0)
@@ -459,4 +467,4 @@ function parseDfa(teks) {
   return parseFa(teks, 'dfa').automaton;
 }
 
-module.exports = { parseFa, parseDfa, EPSILON, TULISAN_EPSILON };
+module.exports = { parseFa, parseDfa, EPSILON, TULISAN_EPSILON, SIMBOL_DICADANGKAN_FA, alasanNamaTakSahFa };

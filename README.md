@@ -41,7 +41,7 @@ fas/
 │   ├── parser.js        teks .dfa/.fa -> objek (Q, Σ, δ, q₀, F)
 │   ├── validator.js     cek aturan V1-V6b (DFA) dan V1-V5 (NFA)
 │   ├── simulator.js     jalankan string, hasilkan jejak (DFA dan NFA)
-│   ├── converter.js     konversi NFA -> DFA (konstruksi subset)
+│   ├── converter.js     konversi NFA -> DFA (konstruksi subset) dan DFA -> NFA
 │   ├── fas.js           gabungan parse -> validasi -> simulasi (dipakai CLI dan web)
 │   ├── cli.js           antarmuka baris perintah
 │   └── web/server.js    tahap 5: server http bawaan Node + API JSON
@@ -139,7 +139,7 @@ CLI dan web.
 | 6b | Validator NFA: V1-V5 (V4 menerima tulisan string kosong), `type:` tak dikenal = error, tujuan ganda digabung + peringatan, W1 dengan ε-transisi; `.fa` ber-`type: DFA` memakai V1-V6b dan menolak `{...}` dan ε. Fungsi `validateNfa` dan `warnNfa` di `src/validator.js`; pesan V4 DFA memberi petunjuk "ε-transisi hanya untuk NFA" | selesai (tes `test/validator-nfa.test.js`) |
 | 6c | Simulator NFA: ε-closure, himpunan state per langkah, jejak `{ accepted, start, steps: [{ from, symbol, moved, edges, to, epsilonEdges }], finalStates }`. Fungsi `simulateNfa`, `epsilonClosure`, `move` di `src/simulator.js` | selesai (tes `test/simulator-nfa.test.js`) |
 | 6d | Konversi NFA -> DFA (konstruksi subset, hanya himpunan terjangkau): nama `[q0,q1]` dan `[]`, deteksi tabrakan nama, tabel langkah demi langkah dan tabel transisi subset. Fungsi `nfaToDfa` di `src/converter.js`, hasil berupa teks `.fa` (`type: DFA`), objek DFA, dan kedua tabel | selesai (tes `test/converter-nfa-dfa.test.js`) |
-| 6e | Konversi DFA -> NFA: tujuan ditulis `{p}`, pilihan buang dead state (state awal tidak pernah dibuang), tabel pemetaan | belum |
+| 6e | Konversi DFA -> NFA: tujuan ditulis `{p}`, pilihan buang dead state (state awal tidak pernah dibuang), tabel pemetaan. Fungsi `dfaToNfa` dan `findDeadStates` di `src/converter.js`; nama/simbol `.dfa` yang tidak sah di `.fa` menghentikan konversi dengan pesan | selesai (tes `test/converter-dfa-nfa.test.js`) |
 | 6f | CLI: membaca `.fa` dan `.dfa`, jejak NFA, perintah konversi kedua arah (mencetak tabel dan menulis file hasil `.fa`) | belum |
 | 6g | Contoh `.fa` (NFA, NFA dengan ε, DFA ber-`type: DFA`, contoh tidak valid) dan server/API untuk `.fa` (daftar contoh, analisis, simulasi) | belum |
 | 6h | Web, dokumen: widget jenis automata (terkunci untuk `.dfa`), baris `type:` disembunyikan dari kotak definisi, menu "DFA baru"/"NFA baru", dokumen awal NFA satu state, Simpan sesuai format dokumen, menu "Jadikan .fa (type: DFA)"/"Jadikan .dfa" | belum |
