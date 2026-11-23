@@ -122,7 +122,7 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
 | 5e | Penyelesaian: layar kecil (tanpa gulung samping halaman, huruf isian 16px, tombol 44px, diagram minimal 75% lalu digulung), aksesibilitas (SVG `role="group"`, ikon tidak dibacakan, teks langkah tidak diumumkan selama diputar, kontras), README | selesai (dicoba di Chromium, lebar 320, 375, dan 1000 px) |
 | 5f | Menggeser node dengan mouse/sentuh atau tombol panah, tombol "Kembalikan posisi"; posisi per tata letak, hanya selama halaman terbuka (`Graf.terapkanGeser`) | selesai (dicoba di Chromium) |
 | 5g | Simpan dan Buka file `.dfa` di sisi browser (unduh / pemilih file / seret-lepas) | selesai (dicoba di Chromium) |
-| nanti | Konfigurasi gambar graf di file terpisah (lihat spesifikasi bagian 8) | belum |
+| nanti | Konfigurasi gambar graf di file terpisah (lihat spesifikasi bagian 11) | belum |
 | nanti | Simpan per pengguna (akun) di server, selain simpan ke komputer sendiri di 5g. Butuh identitas pengguna, penyimpanan di server, dan perlindungan akses | belum |
 
 ## Status

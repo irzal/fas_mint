@@ -154,7 +154,7 @@ function parseDfa(teks) {
       if (nama === 'alphabet') {
         for (const s of nilai) periksaSimbol(s, nomor);
       }
-      // Keputusan tambahan (lihat bagian 9 spesifikasi): q₀ harus tepat satu.
+      // Keputusan tambahan (lihat bagian 12 spesifikasi, Riwayat keputusan): q₀ harus tepat satu.
       if (nama === 'start' && nilai.length !== 1) {
         throw new Error(`baris ${nomor}: 'start:' harus berisi tepat satu state`);
       }

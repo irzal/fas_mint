@@ -179,7 +179,7 @@
    * Tata letak yang sebagian posisinya diganti hasil geser pengguna (sub tahap 5f).
    * `geser` adalah lapisan data tersendiri (nama state -> posisi), terpisah dari
    * tata letak bawaan dan dari file .dfa; kelak bisa disimpan ke file konfigurasi
-   * gambar (spesifikasi bagian 8). Nama di `geser` yang tidak ada di tata letak
+   * gambar (spesifikasi bagian 11). Nama di `geser` yang tidak ada di tata letak
    * (state sudah dihapus dari Q) diabaikan. Objek asli tidak diubah.
    *
    * @param {{ posisi: Map<string, {x: number, y: number}>, lebar: number, tinggi: number }} tataLetak
