@@ -325,6 +325,10 @@ diagram):
 
 - Urutan state di setiap himpunan mengikuti baris `states:`.
 - Tanpa ε-transisi, `moved` sama dengan `to` dan `epsilonEdges` kosong.
+- `epsilonEdges` berisi setiap ε-transisi (p, q) dengan p di dalam
+  ε-closure itu, yaitu panah yang ditelusuri untuk mendapatkan closure.
+  `edges` berisi setiap (q, a, p) dengan q di `from` dan p di δ(q, a).
+  Tujuan yang ditulis dua kali di file dihitung sekali.
 - Pohon komputasi (setiap kemungkinan jalan ditelusuri terpisah) bukan
   bentuk utama jejak, karena jumlah cabangnya bisa eksponensial. Bisa menjadi
   fitur tambahan kelak, misalnya hanya untuk input pendek.
