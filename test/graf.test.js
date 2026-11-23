@@ -168,3 +168,40 @@ test('semua tata letak: posisi lengkap, di dalam kanvas, tidak bertumpuk (200 DF
     }
   }
 });
+
+// ---------- posisi hasil geser (sub tahap 5f) ----------
+
+const { terapkanGeser } = require('../public/graf');
+
+test('terapkanGeser: posisi geser menimpa bawaan, state lain tetap', () => {
+  const graf = buatGraf(contoh);
+  const bawaan = hitungTataLetak(graf, 'berlapis');
+  const hasil = terapkanGeser(bawaan, new Map([['q1', { x: 5, y: 7 }]]));
+  assert.deepEqual(hasil.posisi.get('q1'), { x: 5, y: 7 });
+  assert.deepEqual(hasil.posisi.get('q0'), bawaan.posisi.get('q0'));
+  assert.deepEqual(hasil.posisi.get('q2'), bawaan.posisi.get('q2'));
+  assert.equal(hasil.lebar, bawaan.lebar);
+});
+
+test('terapkanGeser: nama yang tidak ada di Q diabaikan', () => {
+  const bawaan = hitungTataLetak(buatGraf(contoh), 'berlapis');
+  const hasil = terapkanGeser(bawaan, new Map([['qHilang', { x: 1, y: 1 }]]));
+  assert.deepEqual([...hasil.posisi.keys()], ['q0', 'q1', 'q2']);
+});
+
+test('terapkanGeser: objek asli (tata letak dan geser) tidak berubah', () => {
+  const bawaan = hitungTataLetak(buatGraf(contoh), 'melingkar');
+  const salinan = new Map([...bawaan.posisi].map(([k, v]) => [k, { ...v }]));
+  const geser = new Map([['q0', { x: 1, y: 2 }]]);
+  const hasil = terapkanGeser(bawaan, geser);
+  hasil.posisi.get('q0').x = 999;
+  assert.deepEqual(bawaan.posisi, salinan);
+  assert.deepEqual(geser.get('q0'), { x: 1, y: 2 });
+});
+
+test('terapkanGeser: geser kosong dan Q kosong', () => {
+  const bawaan = hitungTataLetak(buatGraf(contoh), 'berlapis');
+  assert.deepEqual(terapkanGeser(bawaan, new Map()).posisi, bawaan.posisi);
+  const kosong = hitungTataLetak(buatGraf(dfaDari([], '', [])), 'berlapis');
+  assert.equal(terapkanGeser(kosong, new Map([['q0', { x: 1, y: 1 }]])).posisi.size, 0);
+});

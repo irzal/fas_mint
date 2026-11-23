@@ -46,7 +46,10 @@
 
       <h2>Diagram state</h2>
       <label for="pilih-tata-letak">Tata letak</label>
-      <select id="pilih-tata-letak"></select>
+      <div class="baris-tata-letak">
+        <select id="pilih-tata-letak"></select>
+        <button type="button" id="tombol-kembalikan-posisi" disabled>Kembalikan posisi</button>
+      </div>
 
       <!-- Sub tahap 5d: kendali animasi jejak, muncul setelah Jalankan -->
       <div id="kendali-jejak" hidden>
@@ -64,6 +67,8 @@
       <p class="keterangan">
         Panah dari luar menunjuk state awal q₀. Lingkaran ganda adalah state akhir (anggota F).
         Garis putus-putus menandai state yang tidak terjangkau dari q₀.
+        Seret state untuk memindahkannya, atau pilih state dengan Tab lalu geser dengan tombol panah.
+        Posisi hanya berlaku selama halaman ini terbuka.
       </p>
     </section>
   </main>

@@ -41,6 +41,8 @@ parser -> validator -> simulator. CLI memakai `src/fas.js` yang sama.
 Diagram state: `POST /api/analisis` (saat mengetik) memberi `dfa` ->
 `Graf.buatGraf` -> `Graf.hitungTataLetak` -> `Gambar.susunGambar` ->
 `Gambar.buatSvg`. Semuanya berjalan di browser, kecuali parse di server.
+Posisi hasil geser pengguna disisipkan lewat `Graf.terapkanGeser` sebelum
+`Gambar.susunGambar`.
 
 ## Deploy ke hosting (mis. Hostinger Node.js)
 
@@ -100,7 +102,7 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
 | 5c | Gambar graf SVG, menu pilihan tata letak, `public/gambar.js` | selesai (dicoba di Chromium) |
 | 5d | Animasi jejak di atas graf (Awal/Mundur/Putar/Maju, pita input, sorot baris tabel), `public/animasi.js` | selesai (dicoba di Chromium) |
 | 5e | Penyelesaian: layar kecil, aksesibilitas, README | belum |
-| 5f | Menggeser node (posisi hanya selama halaman terbuka) | belum |
+| 5f | Menggeser node dengan mouse/sentuh atau tombol panah, tombol "Kembalikan posisi"; posisi per tata letak, hanya selama halaman terbuka (`Graf.terapkanGeser`) | selesai (dicoba di Chromium) |
 | 5g | Simpan dan Buka file `.dfa` di sisi browser (unduh / pemilih file / seret-lepas) | selesai (dicoba di Chromium) |
 | nanti | Konfigurasi gambar graf di file terpisah (lihat spesifikasi bagian 8) | belum |
 | nanti | Simpan per pengguna (akun) di server, selain simpan ke komputer sendiri di 5g. Butuh identitas pengguna, penyimpanan di server, dan perlindungan akses | belum |
@@ -113,4 +115,6 @@ yang salah dilaporkan di `syntaxError` (teks pesan, memuat nomor baris) dan
   dengan pilihan tata letak berlapis atau melingkar.
 - Sudah jalan di web: animasi jejak setelah Jalankan. State aktif, panah yang
   dipakai, simbol yang dibaca, dan baris tabel jejak disorot bersamaan.
-- Belum: menggeser node (5f), penyelesaian (5e).
+- Sudah jalan di web: menggeser state di diagram (seret, atau Tab lalu tombol
+  panah). Posisi tetap saat teks diubah, selama nama statenya masih ada.
+- Belum: penyelesaian (5e).

@@ -4,6 +4,8 @@
 // Tiga lapisan yang sengaja dipisah:
 //   1. buatGraf(dfa)               -> node dan sisi (tanpa posisi)
 //   2. hitungTataLetak(graf, nama) -> posisi tiap node, dari fungsi di TATA_LETAK
+//      terapkanGeser(tataLetak, geser) -> posisi yang digeser pengguna menimpa
+//      posisi bawaan (sub tahap 5f)
 //   3. penggambar (gambar.js)      -> SVG dari graf + posisi
 // Menambah tata letak baru cukup menulis satu fungsi dan mendaftarkannya di
 // TATA_LETAK; lapisan lain tidak perlu diubah.
@@ -173,7 +175,27 @@
     return TATA_LETAK[nama](graf);
   }
 
-  const api = { buatGraf, hitungTataLetak, TATA_LETAK, DAFTAR_TATA_LETAK };
+  /**
+   * Tata letak yang sebagian posisinya diganti hasil geser pengguna (sub tahap 5f).
+   * `geser` adalah lapisan data tersendiri (nama state -> posisi), terpisah dari
+   * tata letak bawaan dan dari file .dfa; kelak bisa disimpan ke file konfigurasi
+   * gambar (spesifikasi bagian 8). Nama di `geser` yang tidak ada di tata letak
+   * (state sudah dihapus dari Q) diabaikan. Objek asli tidak diubah.
+   *
+   * @param {{ posisi: Map<string, {x: number, y: number}>, lebar: number, tinggi: number }} tataLetak
+   * @param {Map<string, {x: number, y: number}>} geser
+   * @returns {{ posisi: Map<string, {x: number, y: number}>, lebar: number, tinggi: number }}
+   */
+  function terapkanGeser(tataLetak, geser) {
+    const posisi = new Map();
+    for (const [id, p] of tataLetak.posisi) {
+      const baru = geser.get(id);
+      posisi.set(id, baru ? { x: baru.x, y: baru.y } : { x: p.x, y: p.y });
+    }
+    return { ...tataLetak, posisi };
+  }
+
+  const api = { buatGraf, hitungTataLetak, terapkanGeser, TATA_LETAK, DAFTAR_TATA_LETAK };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Graf = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

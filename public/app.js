@@ -87,16 +87,129 @@ async function periksa() {
 // tata letak diganti, tanpa bertanya ke server.
 let dfaTerakhir = null;
 
+// Posisi hasil geser pengguna (sub tahap 5f), dipisah per tata letak:
+// nama tata letak -> Map(nama state -> {x, y}). Hanya hidup selama halaman
+// terbuka. Tetap berlaku saat teks .dfa diubah, selama nama statenya masih ada.
+const posisiGeser = new Map();
+const tombolKembalikanPosisi = document.getElementById('tombol-kembalikan-posisi');
+
+function geserTataLetakIni() {
+  if (!posisiGeser.has(pilihTataLetak.value)) posisiGeser.set(pilihTataLetak.value, new Map());
+  return posisiGeser.get(pilihTataLetak.value);
+}
+
+// Gambar terakhir (hasil Gambar.susunGambar), dipakai saat menyeret.
+let gambarTerakhir = null;
+
+// Elemen <svg> dari DFA terakhir. `kotakTetap` (opsional) menahan bingkai gambar
+// selama menyeret, supaya diagram tidak bergeser di bawah kursor.
+function buatSvgDiagram(kotakTetap) {
+  const graf = Graf.buatGraf(dfaTerakhir);
+  const tataLetak = Graf.terapkanGeser(Graf.hitungTataLetak(graf, pilihTataLetak.value), geserTataLetakIni());
+  gambarTerakhir = Gambar.susunGambar(graf, tataLetak);
+  if (kotakTetap) gambarTerakhir.kotak = kotakTetap;
+  const judul = `Diagram state: ${graf.nodes.length} state, ${graf.edges.length} panah transisi`;
+  return Gambar.buatSvg(gambarTerakhir, judul);
+}
+
 function gambarDiagram() {
   diagram.classList.remove('usang');
+  tombolKembalikanPosisi.disabled = geserTataLetakIni().size === 0;
+  gambarTerakhir = null;
   if (!dfaTerakhir) return ganti(diagram, el('p', 'Diagram muncul setelah definisi DFA bisa dibaca.', 'keterangan'));
   if (dfaTerakhir.states.length === 0) return ganti(diagram, el('p', 'Belum ada state untuk digambar.', 'keterangan'));
-  const graf = Graf.buatGraf(dfaTerakhir);
-  const gambar = Gambar.susunGambar(graf, Graf.hitungTataLetak(graf, pilihTataLetak.value));
-  const judul = `Diagram state: ${graf.nodes.length} state, ${graf.edges.length} panah transisi`;
-  ganti(diagram, Gambar.buatSvg(gambar, judul));
+  const fokus = stateBerfokus();
+  ganti(diagram, buatSvgDiagram());
+  kembalikanFokus(fokus);
   tampilkanJejak();
 }
+
+// Saat diseret, hanya <svg> yang diganti; catatan di bawahnya (mis. "sintaks
+// belum benar") dibiarkan.
+function gambarUlangSvg(kotakTetap) {
+  const lama = diagram.querySelector('svg');
+  if (!lama || !dfaTerakhir) return;
+  const fokus = stateBerfokus();
+  lama.replaceWith(buatSvgDiagram(kotakTetap));
+  tombolKembalikanPosisi.disabled = geserTataLetakIni().size === 0;
+  kembalikanFokus(fokus);
+  tampilkanJejak();
+}
+
+// SVG digambar ulang dari nol, jadi state yang sedang difokus (keyboard) dicari
+// lagi lewat namanya dan difokus kembali.
+function stateBerfokus() {
+  const g = document.activeElement?.closest?.('#diagram .state');
+  return g ? g.dataset.state : null;
+}
+function kembalikanFokus(nama) {
+  if (nama === null) return;
+  for (const g of diagram.querySelectorAll('.state')) {
+    if (g.dataset.state === nama) g.focus();
+  }
+}
+
+// ---------- menggeser state (sub tahap 5f) ----------
+
+// Koordinat layar (piksel di jendela) -> koordinat di dalam gambar SVG.
+function keKoordinatGambar(svg, e) {
+  const titik = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+  return { x: titik.x, y: titik.y };
+}
+
+const AMBANG_SERET = 3; // piksel; gerakan lebih kecil dianggap klik, bukan seret
+let seret = null; // { id, dx, dy, kotak, mulaiX, mulaiY, bergerak }
+
+diagram.addEventListener('pointerdown', (e) => {
+  const g = e.target.closest('.state');
+  if (!g || e.button !== 0 || !gambarTerakhir) return;
+  const svg = diagram.querySelector('svg');
+  const s = gambarTerakhir.states.find((x) => x.id === g.dataset.state);
+  const p = keKoordinatGambar(svg, e);
+  // dx, dy: jarak titik pegang ke pusat state, supaya state tidak "melompat" ke kursor.
+  seret = { id: s.id, dx: s.x - p.x, dy: s.y - p.y, kotak: gambarTerakhir.kotak, mulaiX: e.clientX, mulaiY: e.clientY, bergerak: false };
+  diagram.setPointerCapture(e.pointerId);
+  g.focus();
+  e.preventDefault();
+});
+
+diagram.addEventListener('pointermove', (e) => {
+  if (!seret) return;
+  if (!seret.bergerak && Math.hypot(e.clientX - seret.mulaiX, e.clientY - seret.mulaiY) < AMBANG_SERET) return;
+  seret.bergerak = true;
+  diagram.classList.add('menyeret');
+  const p = keKoordinatGambar(diagram.querySelector('svg'), e);
+  geserTataLetakIni().set(seret.id, { x: Math.round(p.x + seret.dx), y: Math.round(p.y + seret.dy) });
+  gambarUlangSvg(seret.kotak);
+});
+
+function selesaiSeret() {
+  if (!seret) return;
+  const bergerak = seret.bergerak;
+  seret = null;
+  diagram.classList.remove('menyeret');
+  if (bergerak) gambarUlangSvg(); // bingkai gambar dihitung ulang
+}
+diagram.addEventListener('pointerup', selesaiSeret);
+diagram.addEventListener('pointercancel', selesaiSeret);
+
+// Tombol panah: geser state yang difokus 10 piksel (dengan Shift: 1 piksel).
+const ARAH_TOMBOL = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+diagram.addEventListener('keydown', (e) => {
+  const g = e.target.closest('.state');
+  const arah = ARAH_TOMBOL[e.key];
+  if (!g || !arah || !gambarTerakhir) return;
+  e.preventDefault(); // jangan menggulung halaman
+  const langkah = e.shiftKey ? 1 : 10;
+  const s = gambarTerakhir.states.find((x) => x.id === g.dataset.state);
+  geserTataLetakIni().set(s.id, { x: s.x + arah[0] * langkah, y: s.y + arah[1] * langkah });
+  gambarUlangSvg();
+});
+
+tombolKembalikanPosisi.addEventListener('click', () => {
+  posisiGeser.delete(pilihTataLetak.value);
+  gambarUlangSvg();
+});
 
 // Dipanggil dengan hasil /api/analisis (atau hasil terakhir, saat tata letak diganti).
 let analisisTerakhir = null;

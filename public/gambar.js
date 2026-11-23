@@ -383,7 +383,14 @@
       const kelas = ['state'];
       if (s.akhir) kelas.push('akhir');
       if (!s.terjangkau) kelas.push('tak-terjangkau');
-      const g = elSvg('g', { class: kelas.join(' '), 'data-state': s.id });
+      // tabindex: state bisa dipilih dengan Tab dan digeser dengan tombol panah (5f).
+      const g = elSvg('g', {
+        class: kelas.join(' '),
+        'data-state': s.id,
+        tabindex: 0,
+        role: 'button',
+        'aria-label': `state ${s.id}${s.awal ? ', state awal' : ''}${s.akhir ? ', state akhir' : ''}; geser dengan tombol panah`,
+      });
       g.appendChild(elSvg('circle', { cx: s.x, cy: s.y, r: gambar.radius }));
       if (s.akhir) {
         g.appendChild(elSvg('circle', { cx: s.x, cy: s.y, r: gambar.radius - JARAK_LINGKARAN_GANDA }));

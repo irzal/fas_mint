@@ -78,3 +78,13 @@ textarea.seret { outline: 3px dashed #1b7f3b; outline-offset: -3px; background: 
 #pita-input .simbol.sekarang { border: 2px solid #9a6700; background: #fff3c4; font-weight: 700; }
 #teks-jejak { margin: 6px 0 0; font-family: ui-monospace, monospace; font-size: 14px; min-height: 2.8em; }
 tr.aktif td { background: #fff3c4; font-weight: 700; }
+
+/* Menggeser state (sub tahap 5f) */
+.baris-tata-letak { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.baris-tata-letak select { flex: 1 1 14em; width: auto; }
+.baris-tata-letak button { margin-top: 0; }
+.graf .state { cursor: grab; touch-action: none; }
+#diagram.menyeret, #diagram.menyeret .graf .state { cursor: grabbing; }
+#diagram.menyeret svg.graf { overflow: visible; }
+.graf .state:focus { outline: none; }
+.graf .state:focus-visible circle:first-of-type { stroke: #0b57d0; stroke-width: 3.5; stroke-dasharray: none; }
