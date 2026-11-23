@@ -1,7 +1,7 @@
 # Finite Automata Simulator (FAS)
 
 Kerangka webapp Node.js untuk mensimulasikan DFA. Format file mengikuti
-[`spesifikasi-dfa.md`](spesifikasi-dfa.md). Tanpa library eksternal: tidak perlu `npm install`.
+[`spesifikasi-fa.md`](spesifikasi-fa.md). Tanpa library eksternal: tidak perlu `npm install`.
 
 ## Menjalankan
 

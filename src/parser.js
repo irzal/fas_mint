@@ -1,5 +1,5 @@
 // Parser: mengubah teks file .dfa menjadi objek JavaScript.
-// Acuan: spesifikasi-dfa.md bagian 4 (aturan penulisan).
+// Acuan: spesifikasi-fa.md bagian 4 (aturan penulisan).
 //
 // Parser HANYA membaca teks. Pemeriksaan "apakah ini benar-benar DFA"
 // adalah tugas validator.

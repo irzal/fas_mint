@@ -1,5 +1,5 @@
 // Validator: memeriksa apakah objek hasil parser benar-benar DFA.
-// Acuan: spesifikasi-dfa.md bagian 5 (aturan V1 sampai V6b).
+// Acuan: spesifikasi-fa.md bagian 5 (aturan V1 sampai V6b).
 
 /**
  * Semua pelanggaran dikumpulkan sekaligus (tidak berhenti di yang pertama),

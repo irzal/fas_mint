@@ -269,12 +269,15 @@ Aturan bagian 4 tetap berlaku, ditambah:
     digabung dan diberi **peringatan** (kemungkinan salah ketik).
   - NFA tanpa `type:` yang kebetulan memenuhi syarat DFA tidak diberi info
     tambahan apa pun; tetap dibaca sebagai NFA.
-- Turunan yang belum dibahas tersendiri (dikonfirmasi saat tahap 6):
-  - V1 sampai V5 tetap berlaku (V4: simbol transisi harus anggota Σ atau
-    salah satu tulisan string kosong).
-  - Nilai `type:` selain `DFA` dan `NFA` di file `.fa` adalah error.
+  - V1 sampai V5 tetap berlaku. Pada V4, simbol transisi harus anggota Σ
+    atau salah satu tulisan string kosong (`ε`, `eps`, `λ`, `lam`).
+  - Nilai `type:` selain `DFA` dan `NFA` di file `.fa` adalah error,
+    misalnya `type 'NDA' tidak dikenal; pilih DFA atau NFA`, karena jenis
+    file tidak bisa ditentukan. (Di file `.dfa` baris `type:` hanya diabaikan
+    dengan peringatan, bagian 8.1.)
   - W1 (state tak terjangkau) tetap berlaku, dengan ε-transisi ikut
-    dihitung sebagai jalan.
+    dihitung sebagai jalan: state yang hanya bisa dicapai lewat ε dianggap
+    terjangkau.
 
 ### 8.6 Simulasi NFA
 
@@ -402,6 +405,18 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
   definisi otomatis dipindah ke widget lalu dihapus dari teks.
 - **Membuat baru**: menu "DFA baru" dan "NFA baru". Keduanya membuat dokumen
   `.fa` dengan mode sesuai menu.
+- **Saat halaman pertama kali dibuka**: dokumen "NFA baru" berisi automata
+  satu state tanpa transisi, yang langsung valid sebagai NFA:
+
+  ```
+  states: q0
+  alphabet: 0 1
+  start: q0
+  accept:
+  ```
+
+  (Sebagai DFA dengan Σ = {0, 1} isi ini tidak valid karena V6a, jadi
+  titik awalnya NFA.)
 - **Menyimpan**: Simpan selalu memakai format dokumen saat ini (`.fa` atau
   `.dfa`), tanpa pilihan format. Untuk dokumen `.fa`, aplikasi selalu menulis
   `type: DFA` atau `type: NFA` di baris pertama sesuai widget, jadi file
@@ -464,6 +479,9 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Nama file spesifikasi diganti dari `spesifikasi-dfa.md` menjadi `spesifikasi-fa.md` | Isinya mencakup DFA dan NFA, sejalan dengan ekstensi `.fa` |
+| 2026-11-23 | Halaman web pertama kali dibuka dengan dokumen "NFA baru": `states: q0`, `alphabet: 0 1`, `start: q0`, `accept:` (tanpa transisi) | Langsung valid sebagai NFA (sebagai DFA melanggar V6a); titik awal untuk menambah state dan transisi |
+| 2026-11-23 | Validasi NFA (bagian 8.5): V1-V5 tetap berlaku (V4 menerima juga ε/eps/λ/lam); nilai `type:` tak dikenal di `.fa` adalah error; W1 menghitung ε-transisi sebagai jalan | Hanya V6 yang khas DFA; jenis file harus pasti; state yang dicapai lewat ε memang terjangkau |
 | 2026-11-23 | Penataan ulang spesifikasi: keputusan tahap 6 dipindah dari catatan rencana ke bagian 8 (format `.fa` dan NFA), 9 (konversi), dan 10 (halaman web); rencana lain menjadi bagian 11, riwayat bagian 12, pertanyaan terbuka bagian 13. Isi keputusan tidak berubah; beberapa turunan yang belum dibahas tersendiri ditandai di bagian 8.5 | Satu acuan utama yang tersusun per topik; bagian yang sudah diimplementasikan dibedakan dari yang belum |
 | 2026-11-23 | Konversi DFA -> NFA (rincian (j)): δ_N(q, a) = {δ_D(q, a)}, setiap tujuan ditulis `{p}`; semua state dipertahankan, dengan pilihan "buang dead state" (state awal tidak pernah dibuang); state tak terjangkau tidak dibuang otomatis; tabel pemetaan ditampilkan dan dicetak CLI; hasil `.fa` `type: NFA`. Himpunan satu anggota `{q1}` sah di `.fa` | Kurung kurawal memperlihatkan perubahan bentuk δ; baris mudah dicocokkan dengan DFA asal; membuang dead state menunjukkan NFA lebih ringkas tanpa mengubah bahasa |
 | 2026-11-23 | Konversi NFA -> DFA (rincian (e)): tampilkan tabel langkah demi langkah (himpunan, simbol, gabungan δ, ε-closure, hasil, baru/sudah ada) dan tabel transisi subset sebagai ringkasan; hanya himpunan yang terjangkau; CLI juga mencetak kedua tabel | Mahasiswa bisa mengikuti cara mendapatkan hasil dan mencocokkannya dengan buku dan kerja di kertas; 2ⁿ himpunan terlalu banyak |
@@ -502,7 +520,7 @@ adalah bagian 12 ini.
 - [x] Perlu opsi dead state implisit? Tidak (lihat riwayat keputusan)
 - [x] Perlu komentar di akhir baris? Ya, `#` memulai komentar sampai akhir baris (lihat riwayat keputusan)
 - [x] Format keluaran jejak simulasi? Lihat "Hasil simulasi" di bagian 7
-- [ ] Turunan aturan validasi NFA di bagian 8.5 (V1-V5, nilai `type:` tak
-  dikenal, W1 dengan ε) dikonfirmasi saat tahap 6
-- [ ] Halaman web: dokumen apa yang terbuka saat halaman pertama kali dibuka
-  (DFA baru, NFA baru, atau contoh); diputuskan saat tahap 6
+- [x] Aturan validasi NFA di bagian 8.5 (V1-V5, nilai `type:` tak dikenal,
+  W1 dengan ε)? Disetujui (lihat riwayat keputusan)
+- [x] Dokumen saat halaman web pertama kali dibuka? NFA baru satu state tanpa
+  transisi, Σ = {0, 1}, F kosong (bagian 10)

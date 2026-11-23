@@ -1,5 +1,5 @@
 // Simulator: menjalankan string input pada DFA yang sudah valid.
-// Acuan: spesifikasi-dfa.md bagian 7 (perilaku simulasi).
+// Acuan: spesifikasi-fa.md bagian 7 (perilaku simulasi).
 
 /**
  * Hasil simulasi (lihat "Hasil simulasi" di spesifikasi bagian 7):

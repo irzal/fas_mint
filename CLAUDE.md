@@ -16,18 +16,18 @@ Seluruh kode project ada di folder ini (folder yang berisi `CLAUDE.md` ini):
 - `public/` file antarmuka web
 - `test/` tes (`node --test`)
 - `contoh/` contoh file `.dfa`
-- `spesifikasi-dfa.md` acuan utama format `.dfa` dan `.fa`
+- `spesifikasi-fa.md` acuan utama format `.dfa` dan `.fa`
 
 Gagasan jangka panjang yang belum diputuskan (editor diagram grafis, Tutor AI
-untuk DFA/NFA/regex) dicatat di `spesifikasi-dfa.md` bagian 11. Jangan
+untuk DFA/NFA/regex) dicatat di `spesifikasi-fa.md` bagian 11. Jangan
 dikerjakan sebelum diputuskan.
 
 ## Pengguna sasaran
 Mahasiswa S1 yang baru belajar DFA. Mereka harus bisa membaca file `.dfa` dan langsung mencocokkannya dengan definisi 5-tuple (Q, Σ, δ, q₀, F) di buku teks.
 
 ## Keputusan yang sudah diambil
-- Format file: teks biasa, satu baris satu informasi (bukan JSON). Rincian lengkap ada di [`spesifikasi-dfa.md`](spesifikasi-dfa.md). File itu adalah acuan utama.
-- Ekstensi file: sekarang `.dfa`. Mulai tahap 6 format baru adalah `.fa` untuk NFA maupun DFA; jenisnya ditentukan baris `type:` (tanpa `type:` = NFA, `type: DFA` = DFA). `.dfa` hanya untuk kompatibilitas file lama, tidak memerlukan baris `type:`, dan selalu dibaca sebagai DFA (baris `type:` di `.dfa` diabaikan; selain `type: DFA` diberi peringatan). Rincian di `spesifikasi-dfa.md` bagian 8-10.
+- Format file: teks biasa, satu baris satu informasi (bukan JSON). Rincian lengkap ada di [`spesifikasi-fa.md`](spesifikasi-fa.md). File itu adalah acuan utama.
+- Ekstensi file: sekarang `.dfa`. Mulai tahap 6 format baru adalah `.fa` untuk NFA maupun DFA; jenisnya ditentukan baris `type:` (tanpa `type:` = NFA, `type: DFA` = DFA). `.dfa` hanya untuk kompatibilitas file lama, tidak memerlukan baris `type:`, dan selalu dibaca sebagai DFA (baris `type:` di `.dfa` diabaikan; selain `type: DFA` diberi peringatan). Rincian di `spesifikasi-fa.md` bagian 8-10.
 - Pesan error memakai notasi buku teks, misalnya `δ(q1, 1) belum didefinisikan`.
 - Teknologi: Node.js, tanpa library eksternal untuk parser, validator, dan simulator. Tes memakai test runner bawaan Node (`node --test`).
 - Kode dipisah per modul (`parser`, `validator`, `simulator`, `cli`) agar bisa dipakai ulang oleh antarmuka web nanti.
@@ -35,14 +35,14 @@ Mahasiswa S1 yang baru belajar DFA. Mereka harus bisa membaca file `.dfa` dan la
 
 ## Cara Claude bekerja di project ini
 - Gunakan Bahasa Indonesia. Istilah teknis boleh dalam bahasa Inggris jika memang itu istilah bakunya (misalnya parser, trace).
-- Selalu rujuk `spesifikasi-dfa.md` di folder ini. Jika permintaan bertentangan dengan spesifikasi, tunjukkan pertentangannya dan tanyakan dulu, jangan diam-diam menyimpang.
-- Jika sebuah keputusan baru diambil, sarankan agar dicatat ke `spesifikasi-dfa.md` (bagian "Riwayat keputusan") supaya percakapan berikutnya konsisten.
+- Selalu rujuk `spesifikasi-fa.md` di folder ini. Jika permintaan bertentangan dengan spesifikasi, tunjukkan pertentangannya dan tanyakan dulu, jangan diam-diam menyimpang.
+- Jika sebuah keputusan baru diambil, sarankan agar dicatat ke `spesifikasi-fa.md` (bagian "Riwayat keputusan") supaya percakapan berikutnya konsisten.
 - Jaga kode dan penjelasan tetap sederhana. Mahasiswa S1 harus bisa membacanya. Pilih kode yang jelas daripada yang ringkas dan rumit.
 - Beri komentar di kode dalam Bahasa Indonesia pada bagian yang berkaitan dengan teori (misalnya fungsi transisi δ).
 - Setiap modul baru disertai tes, termasuk kasus tepi (alfabet kosong, state akhir kosong, string input kosong).
 
 ## Hal yang sudah diputuskan (dulu terbuka)
-Rinciannya di `spesifikasi-dfa.md` bagian 12 (Riwayat keputusan):
+Rinciannya di `spesifikasi-fa.md` bagian 12 (Riwayat keputusan):
 - Dead state implisit: tidak ada. Dead state harus ditulis eksplisit.
 - Komentar di akhir baris: didukung. `#` memulai komentar sampai akhir baris.
 - Format jejak simulasi: `{ accepted, finalState, steps: [{ from, symbol, to }] }`.
