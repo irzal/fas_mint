@@ -221,7 +221,8 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
     ```
 
     - Di dalam `{ }` elemen dipisah koma; spasi setelah koma boleh ada atau
-      tidak (`{q0,q1}` sama dengan `{q0, q1}`).
+      tidak (`{q0,q1}` sama dengan `{q0, q1}`). Himpunan satu anggota juga
+      sah: `q0 0 -> {q1}` sama artinya dengan `q0 0 -> q1`.
     - Di file `.fa`, nama state tidak boleh mengandung `{` atau `}` (khusus
       untuk himpunan), dan koma di dalam nama state hanya boleh di dalam
       kurung siku. Jadi `{[q0,q1], q2}` adalah dua elemen: `[q0,q1]` dan
@@ -322,11 +323,26 @@ Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]
       seperti saat mengerjakan di kertas (bukan seluruh 2ⁿ himpunan bagian).
       `[]` hanya muncul jika ada langkah yang hasilnya himpunan kosong.
     - CLI juga mencetak kedua tabel itu, selain menulis file hasil.
-  - Pertanyaan yang dibahas **setelah format NFA selesai didefinisikan**:
-    (j) algoritma konversi DFA -> NFA (`.dfa` atau `.fa` ber-`type: DFA`
-    menjadi `.fa` ber-`type: NFA`). Rinciannya bergantung pada definisi NFA
-    yang dipakai, misalnya jika δ NFA ditulis sebagai himpunan
-    (δ(q, a) = {p}), transisi DFA perlu ditulis ulang.
+  - Konversi DFA -> NFA (jawaban rincian (j)). Dasar teori: setiap DFA
+    adalah NFA dengan δ_N(q, a) = {δ_D(q, a)}; Q, Σ, q₀, dan F tidak berubah.
+    Algoritma ini terpisah dari konstruksi subset.
+    - Setiap transisi ditulis dengan kurung kurawal: `q0 0 -> q1` menjadi
+      `q0 0 -> {q1}`, supaya terlihat bahwa hasil δ berubah dari satu state
+      menjadi himpunan state.
+    - Konversi dasar mempertahankan semua state, supaya setiap baris mudah
+      dicocokkan dengan DFA asal.
+    - Pilihan "buang dead state": state yang tidak punya jalan ke state
+      akhir dibuang beserta panah yang menuju ke sana (di NFA transisi yang
+      tidak ditulis berarti δ = ∅, jadi bahasa yang diterima tidak berubah).
+      Keterangan menyebut state yang dibuang dan alasannya ("dari state ini
+      tidak ada jalan ke state akhir"). State awal tidak pernah dibuang,
+      juga jika bahasanya ∅.
+    - State tak terjangkau tidak dibuang otomatis (sama dengan keputusan
+      W1: penghapusan hanya manual).
+    - Tabel pemetaan ditampilkan, satu baris per transisi:
+      `δ(q0, 0) = q1` -> `δ(q0, 0) = {q1}`, ditambah baris yang dihapus jika
+      dead state dibuang. CLI juga mencetak tabel ini.
+    - Hasilnya dokumen `.fa` dengan `type: NFA`; nama state tidak berubah.
 - Posisi node untuk visualisasi web, misalnya `layout: q0 100 80`.
 - Konfigurasi gambar graf transisi (tata letak bawaan, posisi node, tampilan)
   di file terpisah, mirip CSS terhadap HTML, sehingga file `.dfa` tetap hanya
@@ -368,6 +384,7 @@ Catat keputusan baru di sini, terbaru di atas.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Konversi DFA -> NFA (rincian (j)): δ_N(q, a) = {δ_D(q, a)}, setiap tujuan ditulis `{p}`; semua state dipertahankan, dengan pilihan "buang dead state" (state awal tidak pernah dibuang); state tak terjangkau tidak dibuang otomatis; tabel pemetaan ditampilkan dan dicetak CLI; hasil `.fa` `type: NFA`. Himpunan satu anggota `{q1}` sah di `.fa` | Kurung kurawal memperlihatkan perubahan bentuk δ; baris mudah dicocokkan dengan DFA asal; membuang dead state menunjukkan NFA lebih ringkas tanpa mengubah bahasa |
 | 2026-11-23 | Konversi NFA -> DFA (rincian (e)): tampilkan tabel langkah demi langkah (himpunan, simbol, gabungan δ, ε-closure, hasil, baru/sudah ada) dan tabel transisi subset sebagai ringkasan; hanya himpunan yang terjangkau; CLI juga mencetak kedua tabel | Mahasiswa bisa mengikuti cara mendapatkan hasil dan mencocokkannya dengan buku dan kerja di kertas; 2ⁿ himpunan terlalu banyak |
 | 2026-11-23 | Halaman web (rincian (g)): widget jenis automata DFA/NFA. Dokumen `.dfa` tidak berubah penanganannya, widget DFA terkunci, `.dfa` hanya bisa dibuka. Dokumen `.fa`: mode dipilih lewat widget, baris `type:` disembunyikan dari kotak definisi (yang diketik dipindah ke widget) dan selalu ditulis saat menyimpan. Menu "DFA baru"/"NFA baru" membuat `.fa`. Simpan selalu memakai format dokumen saat ini; format hanya diganti lewat menu "Jadikan .fa (type: DFA)" / "Jadikan .dfa" (hanya mode DFA). NFA menjadi `.dfa` hanya lewat konversi NFA -> DFA. CLI tidak berubah | Mode selalu terlihat dan mudah diganti; file `.fa` yang disimpan selalu menjelaskan dirinya sendiri; `.dfa` tetap format lama |
 | 2026-11-23 | Jejak simulasi NFA: himpunan state per langkah (`start`, `steps: [{ from, symbol, moved, edges, to, epsilonEdges }]`, `finalStates`, `accepted`); hasil δ dan ε-closure dipisah; panah yang dipakai ikut dicatat; pohon komputasi bukan bentuk utama | Satu langkah per simbol seperti jejak DFA, jadi tabel dan animasi bisa dipakai lagi; himpunannya sama dengan state hasil konstruksi subset; ε-closure terpisah karena sering membingungkan |
