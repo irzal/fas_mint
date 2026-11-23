@@ -12,7 +12,7 @@ Tahap pengembangan (dikerjakan berurutan):
 
 ## Lokasi kode
 Seluruh kode project ada di folder ini (folder yang berisi `CLAUDE.md` ini):
-- `src/` modul `parser`, `validator`, `simulator`, `cli`, dan `web/server.js`
+- `src/` modul `parser`, `validator`, `simulator`, `converter` (konversi NFA <-> DFA), `cli`, dan `web/server.js`
 - `public/` file antarmuka web
 - `test/` tes (`node --test`)
 - `contoh/` contoh file `.dfa`
