@@ -20,8 +20,17 @@
 
 (function (root) {
   const RADIUS_MIN = 24; // jari-jari lingkaran state
-  const RADIUS_MAKS = 40;
+  // Jari-jari membesar mengikuti nama state terpanjang, sampai kira-kira 13
+  // huruf (mis. '[q0,q1,q2,q3]' hasil konversi NFA -> DFA). Jarak antar state
+  // di tata letak ikut diperbesar (lihat faktorJarak), supaya lingkaran besar
+  // tidak berimpitan. Nama yang lebih panjang lagi ditulis dengan huruf lebih
+  // kecil (lihat ukuranHuruf).
+  const RADIUS_MAKS = 66;
+  const RADIUS_DASAR = 40; // jari-jari yang cocok dengan jarak bawaan di graf.js
   const LEBAR_HURUF = 8.4; // perkiraan lebar satu huruf monospace 14px
+  const HURUF_BAWAAN = 14; // px
+  const HURUF_MIN = 9; // px
+  const RUANG_TEPI = 10; // px antara tulisan dan tepi lingkaran (juga lingkaran dalam state akhir)
   const JARAK_LINGKARAN_GANDA = 5; // jarak lingkaran dalam state akhir
   const PANJANG_PANAH_AWAL = 36;
   // Calon lengkungan panah (piksel; positif = melengkung ke kiri arah panah).
@@ -216,10 +225,32 @@
 
   // ---------- susun seluruh gambar ----------
 
+  /**
+   * Faktor pengali jarak antar state untuk jari-jari r: 1 untuk jari-jari
+   * biasa, lebih dari 1 untuk lingkaran besar. Dipakai bersama
+   * Graf.skalakanTataLetak sebelum posisi hasil geser diterapkan.
+   */
+  function faktorJarak(r) {
+    return Math.max(1, r / RADIUS_DASAR);
+  }
+
+  /**
+   * Ukuran huruf nama state (px) supaya muat di dalam lingkaran berjari-jari r
+   * (dengan sisa ruang untuk lingkaran dalam state akhir). Paling kecil HURUF_MIN.
+   */
+  function ukuranHuruf(nama, r) {
+    const perlu = [...nama].length * LEBAR_HURUF;
+    const tersedia = 2 * (r - RUANG_TEPI);
+    if (perlu <= tersedia + 0.01) return HURUF_BAWAAN; // 0.01: sisa pembulatan bilangan pecahan
+    return Math.max(HURUF_MIN, Math.floor((HURUF_BAWAAN * tersedia) / perlu * 10) / 10);
+  }
+
   /** Jari-jari lingkaran: cukup untuk nama state terpanjang, dalam batas. */
   function hitungRadius(nodes) {
     const terpanjang = Math.max(0, ...nodes.map((n) => [...n.id].length));
-    return Math.min(RADIUS_MAKS, Math.max(RADIUS_MIN, (terpanjang * LEBAR_HURUF) / 2 + 8));
+    // Sisa ruang (RUANG_TEPI) sama dengan yang dipakai ukuranHuruf, jadi nama
+    // yang menentukan jari-jari selalu muat dengan huruf biasa.
+    return Math.min(RADIUS_MAKS, Math.max(RADIUS_MIN, (terpanjang * LEBAR_HURUF) / 2 + RUANG_TEPI));
   }
 
   /**
@@ -246,6 +277,7 @@
       awal: n.awal,
       akhir: n.akhir,
       terjangkau: n.terjangkau,
+      ukuranHuruf: ukuranHuruf(n.id, r),
     }));
 
     let panahAwal = null;
@@ -398,13 +430,15 @@
       if (s.akhir) {
         g.appendChild(elSvg('circle', { cx: s.x, cy: s.y, r: gambar.radius - JARAK_LINGKARAN_GANDA }));
       }
-      g.appendChild(elSvg('text', { x: s.x, y: s.y }, s.id));
+      const teks = elSvg('text', { x: s.x, y: s.y }, s.id);
+      if (s.ukuranHuruf !== HURUF_BAWAAN) teks.style.fontSize = `${s.ukuranHuruf}px`; // nama panjang
+      g.appendChild(teks);
       svg.appendChild(g);
     }
     return svg;
   }
 
-  const api = { susunGambar, buatSvg, titikKurva };
+  const api = { susunGambar, buatSvg, titikKurva, hitungRadius, faktorJarak, ukuranHuruf };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Gambar = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

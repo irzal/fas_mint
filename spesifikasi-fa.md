@@ -7,9 +7,9 @@ Finite Automata Simulator (FAS). Jika kode dan dokumen ini berbeda,
 dokumen inilah yang dianggap benar. Perbarui dokumen ini terlebih dahulu
 sebelum mengubah kode.
 
-- Bagian 1-7: DFA dan format `.dfa`. Sudah diimplementasikan (tahap 1-5).
+- Bagian 1-7: DFA dan format `.dfa`. Diimplementasikan di tahap 1-5.
 - Bagian 8-10: format `.fa`, NFA, konversi, dan halaman web untuk keduanya.
-  Sudah diputuskan, belum diimplementasikan (tahap 6).
+  Diimplementasikan di tahap 6.
 - Bagian 11-13: rencana lain, riwayat keputusan, pertanyaan terbuka.
 
 ---
@@ -162,11 +162,10 @@ q0 0 -> q1
 
 Jumlah `steps` sama dengan panjang input; untuk string kosong `steps` adalah `[]`.
 
-## 8. Format `.fa` dan NFA (tahap 6, belum diimplementasikan)
+## 8. Format `.fa` dan NFA (tahap 6)
 
-Bagian 8 sampai 10 berisi keputusan untuk tahap 6. Semuanya sudah diputuskan,
-tetapi belum ada kodenya. Sampai tahap 6 selesai, program hanya mengenal
-format `.dfa` di bagian 1 sampai 7.
+Bagian 8 sampai 10 berlaku untuk format `.fa` dan NFA (tahap 6). Format
+`.dfa` di bagian 1 sampai 7 tetap berlaku tanpa perubahan.
 
 ### 8.1 Jenis file dan baris `type:`
 
@@ -333,7 +332,7 @@ diagram):
   bentuk utama jejak, karena jumlah cabangnya bisa eksponensial. Bisa menjadi
   fitur tambahan kelak, misalnya hanya untuk input pendek.
 
-## 9. Konversi (tahap 6, belum diimplementasikan)
+## 9. Konversi (tahap 6)
 
 ### 9.1 NFA -> DFA (konstruksi subset)
 
@@ -418,7 +417,7 @@ mengganti format DFA bukan konversi:
 - CLI hanya menerima file berekstensi `.fa` atau `.dfa`, karena ekstensi
   menentukan cara membaca (bagian 8.1).
 
-## 10. Halaman web untuk DFA dan NFA (tahap 6, belum diimplementasikan)
+## 10. Halaman web untuk DFA dan NFA (tahap 6)
 
 Aturan CLI tidak berubah: file `.fa` dibaca menurut baris `type:` di
 dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
@@ -475,6 +474,15 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
     himpunan terakhir ditandai merah. Himpunan kosong tidak menyorot apa pun.
     Hasil selalu juga ditulis sebagai kata.
   - Putar otomatis, tombol, dan aturan gerak dikurangi sama dengan DFA (5d).
+- **Mengganti dokumen**: jika isi, format, atau jenis dokumen berubah sejak
+  terakhir dibuka atau disimpan, halaman meminta konfirmasi sebelum "DFA
+  baru"/"NFA baru", memilih contoh, atau membuka file.
+- **Nama state panjang di diagram**: lingkaran membesar sampai cukup untuk
+  sekitar 13 huruf (mis. `[q0,q1,q2,q3]` hasil konversi), dan jarak antar
+  state ikut diperbesar sebanding; nama yang lebih panjang lagi ditulis
+  dengan huruf lebih kecil (paling kecil 9 px).
+- **Pembaca layar**: hasil simulasi dan konversi diumumkan sebagai ringkasan
+  satu kalimat, tidak dengan membacakan seluruh tabel.
 - Catatan: teks yang disalin dari kotak definisi tidak membawa baris
   `type:`. Jika ditempel ke file `.fa` di luar aplikasi, file itu dibaca
   sebagai NFA.
@@ -539,6 +547,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-23 | Penyelesaian tahap 6 (sub tahap 6k): konfirmasi sebelum mengganti dokumen yang berubah; lingkaran state membesar sampai ±13 huruf dengan jarak antar state ikut diperbesar, nama lebih panjang memakai huruf lebih kecil (min 9 px); hasil simulasi/konversi diumumkan sebagai ringkasan untuk pembaca layar | Pekerjaan mahasiswa tidak hilang tanpa sengaja; nama hasil konversi terbaca; tabel panjang tidak dibacakan seluruhnya |
 | 2026-11-23 | Hasil konversi di halaman web dibuka sebagai dokumen baru di tab browser baru; tabel konversi tetap di tab asal | Automata asal tidak hilang dan bisa dibandingkan dengan hasilnya |
 | 2026-11-23 | Animasi jejak NFA (bagian 10): sorot seluruh himpunan aktif dan semua panah δ/ε langkah itu; di akhir, state akhir di himpunan hijau jika DITERIMA, semua merah jika DITOLAK; tabel dengan baris 0 dan kolom ε-closure hanya jika ada ε-transisi | Mahasiswa melihat semua cabang NFA sekaligus; hasil akhir jelas walau himpunannya berisi banyak state |
 | 2026-11-23 | Halaman web (bagian 10): teks dikirim apa adanya dengan field `type` dari widget (bukan diberi baris `type:`); templat "DFA baru" (q0 dengan loop 0 dan 1); file selain `.fa`/`.dfa` ditolak saat dibuka; "Jadikan .fa" membuang baris `type:` dari teks `.dfa` | Nomor baris di pesan error tetap sesuai kotak definisi; DFA baru langsung valid; sama dengan CLI |

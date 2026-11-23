@@ -136,7 +136,7 @@ test('jari-jari membesar untuk nama state panjang, dalam batas', () => {
   const panjang = gambarDari(dfaDari(['nama_state_yang_sangat_panjang'], 'nama_state_yang_sangat_panjang', []));
   assert.equal(pendek.radius, 24);
   assert.ok(sedang.radius > 24 && sedang.radius <= 40);
-  assert.equal(panjang.radius, 40);
+  assert.equal(panjang.radius, 66);
 });
 
 test('state tak terjangkau ditandai terjangkau: false', () => {
@@ -171,4 +171,57 @@ test('state awal tidak ada di Q (DFA belum valid): tanpa panah awal', () => {
 test('transisi ke state yang tidak ada di Q dilewati', () => {
   const g = gambarDari(dfaDari(['q0'], 'q0', [tr('q0', '0', 'qx'), tr('q0', '1', 'q0')]));
   assert.deepEqual(g.panah.map((p) => `${p.from}>${p.to}`), ['q0>q0']);
+});
+
+// ---------- nama state panjang (sub tahap 6k) ----------
+
+const { hitungRadius, faktorJarak, ukuranHuruf } = require('../public/gambar');
+const { skalakanTataLetak } = require('../public/graf');
+
+test('nama hasil konversi [q0,q1,q2,q3] muat dengan huruf biasa; nama sangat panjang dikecilkan', () => {
+  const r = hitungRadius([{ id: '[q0,q1,q2,q3]' }]);
+  assert.ok(r > 40 && r <= 66);
+  assert.equal(ukuranHuruf('[q0,q1,q2,q3]', r), 14);
+  assert.equal(ukuranHuruf('q0', 24), 14);
+  const sangat = 'nama_state_yang_sangat_panjang_sekali';
+  const kecil = ukuranHuruf(sangat, 66);
+  assert.ok(kecil < 14 && kecil >= 9);
+  assert.equal(ukuranHuruf('x'.repeat(200), 66), 9);
+});
+
+test('faktorJarak: 1 untuk lingkaran biasa, lebih dari 1 untuk lingkaran besar', () => {
+  assert.equal(faktorJarak(24), 1);
+  assert.equal(faktorJarak(40), 1);
+  assert.equal(faktorJarak(60), 1.5);
+});
+
+test('skalakanTataLetak mengalikan posisi, lebar, dan tinggi; faktor 1 tidak mengubah', () => {
+  const graf = buatGraf(dfaDari(['a', 'b'], 'a', [tr('a', '0', 'b')]));
+  const t = hitungTataLetak(graf, 'berlapis');
+  const dua = skalakanTataLetak(t, 2);
+  assert.deepEqual(dua.posisi.get('b'), { x: t.posisi.get('b').x * 2, y: t.posisi.get('b').y * 2 });
+  assert.equal(dua.lebar, t.lebar * 2);
+  assert.deepEqual(skalakanTataLetak(t, 1), t);
+});
+
+test('DFA hasil konversi (nama panjang): lingkaran tidak berimpitan, panah tidak menembus state lain', () => {
+  const { nfaToDfa } = require('../src/converter');
+  const { parseFa } = require('../src/parser');
+  const teks = fs.readFileSync(path.join(FOLDER_CONTOH, 'nfa-ketiga-dari-akhir-1.fa'), 'utf8');
+  const dfa = nfaToDfa(parseFa(teks, 'fa').automaton).dfa;
+  for (const { nama: tataLetak } of DAFTAR_TATA_LETAK) {
+    const graf = buatGraf(dfa);
+    const faktor = faktorJarak(hitungRadius(graf.nodes));
+    const g = susunGambar(graf, skalakanTataLetak(hitungTataLetak(graf, tataLetak), faktor));
+    for (const a of g.states) {
+      for (const b of g.states) {
+        if (a !== b) assert.ok(jarak(a, b) > 2 * g.radius, `${tataLetak}: ${a.id} dan ${b.id} berimpitan`);
+      }
+    }
+    for (const p of g.panah.filter((x) => !x.loop)) {
+      for (const s of g.states.filter((x) => x.id !== p.from && x.id !== p.to)) {
+        for (const t of sampel(p.kurva)) assert.ok(jarak(t, s) > g.radius, `${tataLetak}: ${p.from}>${p.to} menembus ${s.id}`);
+      }
+    }
+  }
 });

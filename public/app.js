@@ -53,6 +53,17 @@ function ganti(wadah, ...anak) {
   wadah.replaceChildren(...anak);
 }
 
+// Ringkasan untuk pembaca layar (elemen #pengumuman, role=status). Hasil
+// simulasi dan konversi berisi tabel panjang, jadi yang diumumkan hanya
+// ringkasannya, bukan seluruh isi wadah.
+function umumkan(teks) {
+  const p = document.getElementById('pengumuman');
+  p.textContent = '';
+  // Diisi sesaat kemudian supaya pengumuman yang sama tetap dibacakan ulang.
+  const tanpaIkon = teks.replace(/^[✔✖⚠ℹ]\s*/, ''); // ikon hanya hiasan, tidak dibacakan
+  setTimeout(() => { p.textContent = tanpaIkon; }, 50);
+}
+
 // Himpunan state untuk dibaca: {q0, q1}; himpunan kosong: ∅.
 function himpunan(states) {
   return states.length === 0 ? '∅' : `{${states.join(', ')}}`;
@@ -68,6 +79,26 @@ function himpunan(states) {
 // ke server apa adanya bersama format dan jenis, jadi nomor baris di pesan
 // error tetap sesuai kotak definisi. Baris type: baru ditulis saat menyimpan.
 const dokumen = { format: 'fa', jenis: 'NFA' };
+
+// Keadaan dokumen saat terakhir dibuka atau disimpan. Jika berbeda dengan
+// sekarang, ada perubahan yang belum disimpan.
+let dokumenAman = { teks: '', format: 'fa', jenis: 'NFA' };
+
+function tandaiAman() {
+  dokumenAman = { teks: teksDfa.value, format: dokumen.format, jenis: dokumen.jenis };
+}
+
+function adaPerubahan() {
+  return (
+    teksDfa.value !== dokumenAman.teks || dokumen.format !== dokumenAman.format || dokumen.jenis !== dokumenAman.jenis
+  );
+}
+
+// Sebelum isi kotak definisi diganti dokumen lain: tanya dulu jika ada
+// perubahan yang belum disimpan. Mengembalikan true jika boleh diganti.
+function bolehGantiDokumen() {
+  return !adaPerubahan() || window.confirm('Perubahan pada dokumen ini belum disimpan dan akan hilang. Lanjutkan?');
+}
 
 // Isi body permintaan ke /api/analisis dan /api/simulasi.
 function bodyDokumen() {
@@ -111,14 +142,16 @@ function bukaDokumen(teks, format, nama, jenisBaru) {
   dokumen.format = format;
   teksDfa.value = teks;
   namaBerkas.value = Berkas.namaBerkas(nama, format);
+  tandaiAman();
   perbaruiWidget();
   definisiBerubah();
   periksa();
 }
 
 function dokumenBaru(jenis) {
+  if (!bolehGantiDokumen()) return;
   bukaDokumen(Berkas.TEMPLAT[jenis], 'fa', 'automata.fa', jenis);
-  pilihContoh.value = '';
+  pilihContoh.value = contohTerakhir = '';
   infoBerkasOk(`Dokumen ${jenis} baru.`);
 }
 
@@ -227,7 +260,11 @@ let gambarTerakhir = null;
 // selama menyeret, supaya diagram tidak bergeser di bawah kursor.
 function buatSvgDiagram(kotakTetap) {
   const graf = Graf.buatGraf(automataTerakhir);
-  const tataLetak = Graf.terapkanGeser(Graf.hitungTataLetak(graf, pilihTataLetak.value), geserTataLetakIni());
+  // Nama state panjang -> lingkaran besar -> jarak antar state ikut diperbesar
+  // (sebelum posisi hasil geser diterapkan, supaya posisi geser tetap tepat).
+  const faktor = Gambar.faktorJarak(Gambar.hitungRadius(graf.nodes));
+  const bawaan = Graf.skalakanTataLetak(Graf.hitungTataLetak(graf, pilihTataLetak.value), faktor);
+  const tataLetak = Graf.terapkanGeser(bawaan, geserTataLetakIni());
   gambarTerakhir = Gambar.susunGambar(graf, tataLetak);
   if (kotakTetap) gambarTerakhir.kotak = kotakTetap;
   const judul = `Diagram state: ${graf.nodes.length} state, ${graf.edges.length} panah transisi`;
@@ -548,6 +585,7 @@ function tampilkanSimulasiNfa(data) {
     ? kotak('ok', '✔', `DITERIMA: himpunan terakhir ${himpunan(r.finalStates)} memuat state akhir`)
     : kotak('galat', '✖', `DITOLAK: himpunan terakhir ${himpunan(r.finalStates)} tidak memuat state akhir`);
   status.classList.add('status-hasil');
+  umumkan(status.textContent.trim());
   const adaEpsilon = data.automaton.transitions.some((t) => t.symbol === 'ε' && t.to.length > 0);
   ganti(hasil, status, el('h3', 'Jejak (himpunan state per langkah)'), gulung(tabelJejakNfa(r, adaEpsilon)));
 
@@ -560,6 +598,7 @@ function tampilkanSimulasiNfa(data) {
 
 function tampilkanSimulasi(data) {
   if (data.errors.length > 0) {
+    umumkan(`Tidak dijalankan: bukan ${data.type} yang valid.`);
     return ganti(hasil, kotak('galat', '✖', `Tidak dijalankan: bukan ${data.type} yang valid.`, data.errors));
   }
   if (data.type === 'NFA') return tampilkanSimulasiNfa(data);
@@ -568,6 +607,7 @@ function tampilkanSimulasi(data) {
     ? kotak('ok', '✔', `DITERIMA, berhenti di ${r.finalState}`)
     : kotak('galat', '✖', `DITOLAK, berhenti di ${r.finalState}`);
   status.classList.add('status-hasil');
+  umumkan(status.textContent.trim());
   ganti(hasil, status, el('h3', 'Jejak'), tabelJejak(r.steps));
 
   // Diagram digambar dari DFA yang baru saja disimulasikan, supaya animasi
@@ -590,6 +630,7 @@ async function jalankan() {
     const data = await res.json();
     if (data.error) {
       ganti(hasil, kotak('galat', '✖', 'Error:', [data.error]));
+      umumkan(`Error: ${data.error}`);
       if (data.position) tandaiSimbol(input.value, data.position);
       return;
     }
@@ -711,12 +752,21 @@ async function jalankanKonversi() {
       body: JSON.stringify({ ...bodyDokumen(), arah, buangDeadState: arah === 'ke-nfa' && centangBuangDead.checked }),
     });
     const data = await res.json();
-    if (data.error) return ganti(hasilKonversi, kotak('galat', '✖', 'Tidak bisa dikonversi:', [data.error]));
+    if (data.error) {
+      umumkan(`Tidak bisa dikonversi: ${data.error}`);
+      return ganti(hasilKonversi, kotak('galat', '✖', 'Tidak bisa dikonversi:', [data.error]));
+    }
     if (data.errors.length > 0) {
+      umumkan(`Tidak dikonversi: bukan ${data.type} yang valid.`);
       return ganti(hasilKonversi, kotak('galat', '✖', `Tidak dikonversi: bukan ${data.type} yang valid.`, data.errors));
     }
-    if (arah === 'ke-dfa') tampilkanKeDfa(data.hasil, automataTerakhir?.start ?? '');
-    else tampilkanKeNfa(data.hasil);
+    if (arah === 'ke-dfa') {
+      tampilkanKeDfa(data.hasil, automataTerakhir?.start ?? '');
+      umumkan(`Konversi NFA ke DFA selesai: ${data.hasil.table.length} state DFA. Tabel ada di bagian Konversi.`);
+    } else {
+      tampilkanKeNfa(data.hasil);
+      umumkan('Konversi DFA ke NFA selesai. Tabel pemetaan ada di bagian Konversi.');
+    }
     bagianKonversi.scrollIntoView({ behavior: kurangiGerak.matches ? 'auto' : 'smooth', block: 'start' });
   } catch {
     ganti(hasilKonversi, kotak('galat', '✖', 'Tidak bisa menghubungi server.'));
@@ -770,6 +820,7 @@ function simpanBerkas() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  tandaiAman();
   infoBerkasOk(`Disimpan sebagai ${nama} (folder unduhan browser).`);
 }
 
@@ -782,8 +833,9 @@ async function bukaBerkas(berkas) {
     if (!format) return infoBerkasGalat(`Tidak bisa membuka ${berkas.name}: file harus berekstensi .fa atau .dfa.`);
     const masalah = Berkas.periksaBerkas({ teks, ukuran: berkas.size });
     if (masalah) return infoBerkasGalat(`Tidak bisa membuka ${berkas.name}: ${masalah}.`);
+    if (!bolehGantiDokumen()) return;
     bukaDokumen(teks, format, berkas.name);
-    pilihContoh.value = '';
+    pilihContoh.value = contohTerakhir = '';
     infoBerkasOk(`Dibuka: ${berkas.name} (${dokumen.jenis}).`);
   } catch {
     infoBerkasGalat(`Tidak bisa membaca ${berkas.name}.`);
@@ -833,9 +885,16 @@ async function muatDaftarContoh() {
   }
 }
 
+// Contoh yang terakhir dimuat, untuk mengembalikan pilihan jika batal.
+let contohTerakhir = '';
 pilihContoh.addEventListener('change', async () => {
   if (!pilihContoh.value) return;
+  if (!bolehGantiDokumen()) {
+    pilihContoh.value = contohTerakhir;
+    return;
+  }
   const nama = pilihContoh.value;
+  contohTerakhir = nama;
   const res = await fetch('/api/contoh/' + encodeURIComponent(nama));
   bukaDokumen(await res.text(), Berkas.formatDariNama(nama), nama);
   ganti(infoBerkas);

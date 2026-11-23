@@ -8,7 +8,8 @@ Tahap pengembangan (dikerjakan berurutan):
 2. Parser dan validator (selesai)
 3. Simulator (menjalankan string, menampilkan jejak langkah demi langkah) (selesai)
 4. Antarmuka CLI (selesai)
-5. Antarmuka web (visualisasi diagram state)  <- tahap sekarang (rincian sub tahap di `README.md`)
+5. Antarmuka web (visualisasi diagram state) (selesai)
+6. Format `.fa`, NFA (dengan ε), dan konversi NFA <-> DFA di CLI dan web (selesai; rincian sub tahap di `README.md`)
 
 ## Lokasi kode
 Seluruh kode project ada di folder ini (folder yang berisi `CLAUDE.md` ini):
@@ -27,11 +28,11 @@ Mahasiswa S1 yang baru belajar DFA. Mereka harus bisa membaca file `.dfa` dan la
 
 ## Keputusan yang sudah diambil
 - Format file: teks biasa, satu baris satu informasi (bukan JSON). Rincian lengkap ada di [`spesifikasi-fa.md`](spesifikasi-fa.md). File itu adalah acuan utama.
-- Ekstensi file: sekarang `.dfa`. Mulai tahap 6 format baru adalah `.fa` untuk NFA maupun DFA; jenisnya ditentukan baris `type:` (tanpa `type:` = NFA, `type: DFA` = DFA). `.dfa` hanya untuk kompatibilitas file lama, tidak memerlukan baris `type:`, dan selalu dibaca sebagai DFA (baris `type:` di `.dfa` diabaikan; selain `type: DFA` diberi peringatan). Rincian di `spesifikasi-fa.md` bagian 8-10.
+- Ekstensi file: `.fa` untuk NFA maupun DFA (sejak tahap 6); jenisnya ditentukan baris `type:` (tanpa `type:` = NFA, `type: DFA` = DFA). `.dfa` hanya untuk kompatibilitas file lama, tidak memerlukan baris `type:`, dan selalu dibaca sebagai DFA (baris `type:` di `.dfa` diabaikan; selain `type: DFA` diberi peringatan). Rincian di `spesifikasi-fa.md` bagian 8-10.
 - Pesan error memakai notasi buku teks, misalnya `δ(q1, 1) belum didefinisikan`.
 - Teknologi: Node.js, tanpa library eksternal untuk parser, validator, dan simulator. Tes memakai test runner bawaan Node (`node --test`).
 - Kode dipisah per modul (`parser`, `validator`, `simulator`, `cli`) agar bisa dipakai ulang oleh antarmuka web nanti.
-- Hanya DFA dulu. NFA dan ε-transisi belum dikerjakan (direncanakan sebagai tahap 6, bersama konversi NFA -> DFA yang wajib ada), tetapi format dijaga agar bisa diperluas tanpa merusak file lama.
+- DFA dan NFA (dengan ε-transisi) didukung sejak tahap 6, bersama konversi NFA -> DFA dan DFA -> NFA. Format `.dfa` lama tetap berlaku tanpa perubahan.
 
 ## Cara Claude bekerja di project ini
 - Gunakan Bahasa Indonesia. Istilah teknis boleh dalam bahasa Inggris jika memang itu istilah bakunya (misalnya parser, trace).

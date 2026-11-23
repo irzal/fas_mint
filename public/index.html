@@ -26,7 +26,7 @@
       <!-- Tahap 6 (spesifikasi bagian 10): jenis automata dokumen yang sedang
            dibuka. Untuk dokumen .fa bisa diganti; untuk dokumen .dfa terkunci DFA.
            Baris type: tidak ditulis di kotak definisi, tetapi lewat pilihan ini. -->
-      <fieldset id="widget-jenis">
+      <fieldset id="widget-jenis" aria-describedby="keterangan-jenis">
         <legend>Jenis automata</legend>
         <label><input type="radio" name="jenis" value="DFA"> DFA</label>
         <label><input type="radio" name="jenis" value="NFA"> NFA</label>
@@ -69,7 +69,7 @@
       <div id="status-dfa" role="status" aria-live="polite">Belum ada definisi.</div>
 
       <h2>Hasil</h2>
-      <div id="hasil" aria-live="polite">Belum ada simulasi.</div>
+      <div id="hasil">Belum ada simulasi.</div>
 
       <h2>Diagram state</h2>
       <label for="pilih-tata-letak">Tata letak</label>
@@ -100,10 +100,14 @@
 
       <div id="bagian-konversi" hidden>
         <h2>Konversi</h2>
-        <div id="hasil-konversi" aria-live="polite"></div>
+        <div id="hasil-konversi"></div>
       </div>
     </section>
   </main>
+
+  <!-- Pengumuman singkat untuk pembaca layar (tidak terlihat): ringkasan hasil
+       simulasi dan konversi, tanpa membacakan seluruh tabel. -->
+  <p id="pengumuman" class="hanya-pembaca-layar" role="status" aria-live="polite"></p>
 
   <script src="graf.js"></script>
   <script src="gambar.js"></script>

@@ -200,7 +200,23 @@
     return { ...tataLetak, posisi };
   }
 
-  const api = { buatGraf, hitungTataLetak, terapkanGeser, TATA_LETAK, DAFTAR_TATA_LETAK };
+  /**
+   * Tata letak yang semua jaraknya dikalikan `faktor` (posisi, lebar, tinggi).
+   * Dipakai untuk lingkaran state yang besar (nama panjang), supaya jarak
+   * antar state tetap lega. Faktor 1 menghasilkan salinan yang sama.
+   *
+   * @param {{ posisi: Map<string, {x: number, y: number}>, lebar: number, tinggi: number }} tataLetak
+   * @param {number} faktor
+   */
+  function skalakanTataLetak(tataLetak, faktor) {
+    const posisi = new Map();
+    for (const [id, p] of tataLetak.posisi) {
+      posisi.set(id, { x: bulatkan(p.x * faktor), y: bulatkan(p.y * faktor) });
+    }
+    return { posisi, lebar: bulatkan(tataLetak.lebar * faktor), tinggi: bulatkan(tataLetak.tinggi * faktor) };
+  }
+
+  const api = { buatGraf, hitungTataLetak, terapkanGeser, skalakanTataLetak, TATA_LETAK, DAFTAR_TATA_LETAK };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Graf = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

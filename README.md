@@ -1,6 +1,7 @@
 # Finite Automata Simulator (FAS)
 
-Kerangka webapp Node.js untuk mensimulasikan DFA. Format file mengikuti
+Webapp dan CLI Node.js untuk mensimulasikan DFA dan NFA, serta mengonversi
+NFA ke DFA (konstruksi subset) dan sebaliknya. Format file mengikuti
 [`spesifikasi-fa.md`](spesifikasi-fa.md). Tanpa library eksternal: tidak perlu `npm install`.
 
 ## Menjalankan
@@ -196,18 +197,13 @@ CLI dan web.
 | 6h | Web, dokumen: widget jenis automata (terkunci untuk `.dfa`), baris `type:` disembunyikan dari kotak definisi, menu "DFA baru"/"NFA baru", dokumen awal NFA satu state, Simpan sesuai format dokumen, menu "Jadikan .fa (type: DFA)"/"Jadikan .dfa". Field `type` di API; diagram dan tabel jejak dasar untuk NFA (tanpa animasi) | selesai (dicoba di Chromium, termasuk lebar 320 px) |
 | 6i | Web, NFA: diagram dengan ε-transisi, tabel jejak NFA (kolom hasil δ dan ε-closure terpisah), animasi yang menyorot beberapa state dan panah sekaligus. Fungsi `keadaanJejakNfa` di `public/animasi.js`; `sorotDiagram` umum untuk DFA dan NFA | selesai (tes `test/animasi-nfa.test.js`; dicoba di Chromium) |
 | 6j | Web, konversi: menu konversi kedua arah, tabel langkah/pemetaan; hasil dibuka sebagai dokumen baru di tab browser baru. API `/api/konversi`, fungsi `konversiFa` di `src/fas.js` | selesai (tes di `test/server-fa.test.js`; dicoba di Chromium, lebar 1000 dan 375 px) |
-| 6k | Penyelesaian: layar kecil dan aksesibilitas untuk bagian baru, README, contoh lama tetap jalan | belum |
+| 6k | Penyelesaian: konfirmasi sebelum mengganti dokumen yang berubah, lingkaran untuk nama state panjang (jarak antar state ikut diperbesar), ringkasan hasil untuk pembaca layar, README, contoh lama tetap jalan | selesai (tes `test/kompatibilitas.test.js` dan tambahan di `test/gambar.test.js`; dicoba di Chromium) |
 
 ## Status
 
-- Sudah jalan: `parseDfa`, `validateDfa`, `simulate`, server web, API, dan
-  CLI (dengan jejak langkah), semuanya dengan tes.
-- Sudah jalan di web: diagram state (SVG) yang diperbarui saat mengetik,
-  dengan pilihan tata letak berlapis atau melingkar.
-- Sudah jalan di web: animasi jejak setelah Jalankan. State aktif, panah yang
-  dipakai, simbol yang dibaca, dan baris tabel jejak disorot bersamaan.
-- Sudah jalan di web: menggeser state di diagram (seret, atau Tab lalu tombol
-  panah). Posisi tetap saat teks diubah, selama nama statenya masih ada.
-- Tahap 5 selesai. Yang masih "nanti" ada di tabel tahap 5.
-- Tahap 6 (NFA dan konversi): sudah diputuskan di spesifikasi, belum
-  dikerjakan. Rencananya di tabel di atas.
+- Tahap 1-5 (DFA, format `.dfa`, CLI, web) selesai.
+- Tahap 6 (format `.fa`, NFA dengan ε, konversi NFA <-> DFA di CLI dan web)
+  selesai. Format `.dfa` lama tetap didukung tanpa perubahan.
+- Yang masih "nanti" ada di tabel tahap 5 (konfigurasi gambar graf di file
+  terpisah, simpan per pengguna di server). Gagasan jangka panjang dicatat
+  di spesifikasi bagian 11.
