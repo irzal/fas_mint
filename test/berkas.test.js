@@ -121,7 +121,23 @@ test('simpan .fa lalu buka lagi: jenis dan teks kembali sama', () => {
 
 test('TEMPLAT: NFA baru valid sebagai NFA, DFA baru valid sebagai DFA', () => {
   const { periksaFa } = require('../src/fas');
-  assert.deepEqual(periksaFa(B.TEMPLAT.NFA, 'fa', 'NFA').errors, []);
-  assert.deepEqual(periksaFa(B.TEMPLAT.DFA, 'fa', 'DFA').errors, []);
-  assert.deepEqual(periksaFa(B.TEMPLAT.NFA, 'fa', 'DFA').errors.length, 2); // NFA baru bukan DFA (V6a)
+  const nfa = periksaFa(B.TEMPLAT.NFA, 'fa', 'NFA');
+  assert.deepEqual(nfa.errors, []);
+  assert.deepEqual(nfa.warnings, []);
+  const dfa = periksaFa(B.TEMPLAT.DFA, 'fa', 'DFA');
+  assert.deepEqual(dfa.errors, []);
+  assert.deepEqual(dfa.warnings, []);
+  // NFA baru bukan DFA: notasi himpunan ditolak parser
+  assert.throws(() => periksaFa(B.TEMPLAT.NFA, 'fa', 'DFA'), /notasi himpunan .* hanya untuk NFA/);
+});
+
+test('TEMPLAT: NFA baru memuat ε-transisi, transisi ke lebih dari satu state, dan komentar λ; q0 ∈ F', () => {
+  const { parseFa } = require('../src/parser');
+  const nfa = parseFa(B.TEMPLAT.NFA, 'fa').automaton;
+  assert.ok(nfa.transitions.some((t) => t.symbol === 'ε'));
+  assert.ok(nfa.transitions.some((t) => t.to.length > 1));
+  assert.deepEqual(nfa.accept, [nfa.start]);
+  assert.match(B.TEMPLAT.NFA, /^# .*λ, eps, atau lam$/m);
+  const dfa = parseFa(B.TEMPLAT.DFA, 'fa', { type: 'DFA' }).automaton;
+  assert.deepEqual(dfa.accept, [dfa.start]);
 });

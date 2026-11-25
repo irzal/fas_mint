@@ -446,17 +446,23 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
 - **Membuat baru**: menu "DFA baru" dan "NFA baru". Keduanya membuat dokumen
   `.fa` dengan mode sesuai menu.
 - **Saat halaman pertama kali dibuka**: dokumen "NFA baru" berisi automata
-  satu state tanpa transisi, yang langsung valid sebagai NFA:
+  dua state yang langsung valid sebagai NFA dan memperlihatkan dua ciri NFA,
+  yaitu transisi ke lebih dari satu state dan ε-transisi (string kosong).
+  Komentarnya menyebut tulisan lain untuk ε:
 
   ```
-  states: q0
+  states: q0 q1
   alphabet: 0 1
   start: q0
-  accept:
+  accept: q0
+
+  q0 0 -> {q0, q1}
+  # ε (string kosong) boleh juga ditulis λ, eps, atau lam
+  q0 ε -> q1
   ```
 
-  (Sebagai DFA dengan Σ = {0, 1} isi ini tidak valid karena V6a, jadi
-  titik awalnya NFA.)
+  (Sebagai DFA isi ini tidak valid karena notasi himpunan dan ε hanya untuk
+  NFA, jadi titik awalnya NFA.)
 - **Menyimpan**: Simpan selalu memakai format dokumen saat ini (`.fa` atau
   `.dfa`), tanpa pilihan format. Untuk dokumen `.fa`, aplikasi selalu menulis
   `type: DFA` atau `type: NFA` di baris pertama sesuai widget, jadi file
@@ -505,8 +511,9 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
   pesan error tetap sesuai kotak definisi. Jika jenis diberikan dari luar,
   baris `type: DFA`/`type: NFA` di teks ditolak (halaman selalu
   memindahkannya ke widget lebih dulu); nilai lain dilaporkan seperti biasa.
-- "DFA baru" berisi satu state q0 dengan loop untuk 0 dan 1, karena DFA wajib
-  punya transisi untuk setiap simbol (V6); "NFA baru" sama dengan dokumen awal.
+- "DFA baru" berisi satu state q0 yang sekaligus state akhir (`accept: q0`)
+  dengan loop untuk 0 dan 1, karena DFA wajib punya transisi untuk setiap
+  simbol (V6); "NFA baru" sama dengan dokumen awal.
 - Membuka file selain `.fa` dan `.dfa` ditolak dengan pesan (sama dengan CLI).
 - "Jadikan .fa (type: DFA)" membuang baris `type:` yang sah dari teks `.dfa`
   (selama ini diabaikan) dan memberi tahu pengguna.
@@ -562,6 +569,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-25 | Templat dokumen baru (bagian 10): "DFA baru" menjadikan q0 juga state akhir (`accept: q0`); "NFA baru" (juga dokumen awal halaman) berisi `states: q0 q1`, `accept: q0`, `q0 0 -> {q0, q1}` dan `q0 ε -> q1` dengan komentar bahwa ε boleh ditulis λ, eps, atau lam. Mengganti templat di baris 2026-11-23 | Templat NFA langsung memperlihatkan cara menulis transisi ke banyak state dan ε-transisi; teks memakai ε seperti diagram dan tabel jejak, sementara alternatif λ tetap diberitahukan; kedua templat langsung punya state akhir |
 | 2026-11-25 | Tata letak melingkar: state awal q₀ di titik paling kiri lingkaran (sumbu x negatif, sudut 180°), state lain menyusul searah jarum jam (naik ke atas lalu ke kanan); sebelumnya q₀ di puncak | Panah masuk q₀ datang dari kiri, jadi tidak melintasi lingkaran; diagram terbaca dari kiri seperti tata letak berlapis |
 | 2026-11-23 | Perbaikan kecil sesudah tahap 6: pohon komputasi NFA sebagai tampilan tambahan (maks 200 simpul; web, CLI `--pohon`, API `tree`); peringatan browser saat menutup halaman dengan perubahan belum disimpan (hasil konversi di tab baru dianggap belum disimpan); API menerima field `teks` (nama lama `dfa` tetap diterima); CLI memakai `konversiFa`; panah dipilih supaya tidak berdempetan dengan panah lain | Melihat semua cabang NFA untuk input pendek; pekerjaan tidak hilang; nama field netral; satu jalur konversi; diagram graf padat lebih terbaca |
 | 2026-11-23 | Merapikan bagian 11: butir "posisi node di dalam file (`layout: ...`)" dihapus karena bertentangan dengan keputusan 2026-10-08 (konfigurasi gambar di file terpisah); gagasan A dan B disesuaikan dengan keadaan sesudah tahap 6 (format `.fa`; NFA dan konversi sudah ada) | Spesifikasi tidak memuat rencana yang saling bertentangan atau sudah usang |
