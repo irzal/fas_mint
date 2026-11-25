@@ -146,7 +146,7 @@
     // dan ε-transisi (string kosong), δ(q0, ε) = {q1}. q0 juga state akhir.
     NFA:
       'states: q0 q1\nalphabet: 0 1\nstart: q0\naccept: q0\n\nq0 0 -> {q0, q1}\n' +
-      '# ε (string kosong) boleh juga ditulis λ, eps, atau lam\nq0 ε -> q1\n',
+      '# ε boleh ditulis λ, eps, lam\nq0 ε -> q1\n',
     // DFA: δ harus total, jadi q0 diberi loop untuk 0 dan 1; q0 juga state akhir.
     DFA: 'states: q0\nalphabet: 0 1\nstart: q0\naccept: q0\n\nq0 0 -> q0\nq0 1 -> q0\n',
   };

@@ -457,7 +457,7 @@ dalamnya, file `.dfa` selalu DFA. Bagian ini hanya untuk halaman web.
   accept: q0
 
   q0 0 -> {q0, q1}
-  # ε (string kosong) boleh juga ditulis λ, eps, atau lam
+  # ε boleh ditulis λ, eps, lam
   q0 ε -> q1
   ```
 
@@ -569,6 +569,7 @@ adalah bagian 12 ini.
 
 | Tanggal | Keputusan | Alasan |
 |---------|-----------|--------|
+| 2026-11-25 | Kotak definisi di halaman web tanpa word wrap: satu baris di layar = satu baris di file, baris panjang digulir ke samping. Komentar templat NFA dipendekkan menjadi `# ε boleh ditulis λ, eps, lam` | Lanjutan baris (terutama komentar) tidak tampak seperti baris baru; nomor baris di pesan error cocok dengan yang terlihat; komentar muat di layar HP |
 | 2026-11-25 | Templat dokumen baru (bagian 10): "DFA baru" menjadikan q0 juga state akhir (`accept: q0`); "NFA baru" (juga dokumen awal halaman) berisi `states: q0 q1`, `accept: q0`, `q0 0 -> {q0, q1}` dan `q0 ε -> q1` dengan komentar bahwa ε boleh ditulis λ, eps, atau lam. Mengganti templat di baris 2026-11-23 | Templat NFA langsung memperlihatkan cara menulis transisi ke banyak state dan ε-transisi; teks memakai ε seperti diagram dan tabel jejak, sementara alternatif λ tetap diberitahukan; kedua templat langsung punya state akhir |
 | 2026-11-25 | Tata letak melingkar: state awal q₀ di titik paling kiri lingkaran (sumbu x negatif, sudut 180°), state lain menyusul searah jarum jam (naik ke atas lalu ke kanan); sebelumnya q₀ di puncak | Panah masuk q₀ datang dari kiri, jadi tidak melintasi lingkaran; diagram terbaca dari kiri seperti tata letak berlapis |
 | 2026-11-23 | Perbaikan kecil sesudah tahap 6: pohon komputasi NFA sebagai tampilan tambahan (maks 200 simpul; web, CLI `--pohon`, API `tree`); peringatan browser saat menutup halaman dengan perubahan belum disimpan (hasil konversi di tab baru dianggap belum disimpan); API menerima field `teks` (nama lama `dfa` tetap diterima); CLI memakai `konversiFa`; panah dipilih supaya tidak berdempetan dengan panah lain | Melihat semua cabang NFA untuk input pendek; pekerjaan tidak hilang; nama field netral; satu jalur konversi; diagram graf padat lebih terbaca |

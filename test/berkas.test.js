@@ -137,7 +137,7 @@ test('TEMPLAT: NFA baru memuat ε-transisi, transisi ke lebih dari satu state, d
   assert.ok(nfa.transitions.some((t) => t.symbol === 'ε'));
   assert.ok(nfa.transitions.some((t) => t.to.length > 1));
   assert.deepEqual(nfa.accept, [nfa.start]);
-  assert.match(B.TEMPLAT.NFA, /^# .*λ, eps, atau lam$/m);
+  assert.match(B.TEMPLAT.NFA, /^# ε boleh ditulis λ, eps, lam$/m);
   const dfa = parseFa(B.TEMPLAT.DFA, 'fa', { type: 'DFA' }).automaton;
   assert.deepEqual(dfa.accept, [dfa.start]);
 });

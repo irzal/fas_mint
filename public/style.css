@@ -39,6 +39,10 @@ th { background: #f0f0f0; }
 .aksi-berkas button { margin-top: 0; }
 .aksi-berkas label.sisi { display: inline; margin: 0 0 0 8px; font-weight: 600; }
 .aksi-berkas #nama-berkas { width: auto; flex: 1 1 8em; min-width: 8em; }
+/* Kotak definisi tanpa word wrap: satu baris di layar = satu baris di file
+   (nomor baris di pesan error cocok; lanjutan komentar tidak tampak seperti
+   baris baru). Baris panjang digulir ke samping. */
+#teks-dfa { white-space: pre; overflow-wrap: normal; overflow-x: auto; }
 textarea.seret { outline: 3px dashed #1b7f3b; outline-offset: -3px; background: #f1faf3; }
 #info-berkas:empty { display: none; }
 
