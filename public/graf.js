@@ -138,7 +138,11 @@
 
   /**
    * Tata letak melingkar: semua state di keliling lingkaran, searah jarum jam,
-   * mulai dari puncak. State awal (urutan 0) berada di puncak.
+   * mulai dari titik paling kiri (sumbu x negatif, sudut 180°). State awal
+   * (urutan 0) berada paling kiri, sehingga panah masuk q₀ dari kiri tidak
+   * melintasi lingkaran; state berikutnya naik ke atas lalu ke kanan.
+   * Catatan: di layar sumbu y mengarah ke bawah, jadi sudut yang bertambah
+   * bergerak searah jarum jam.
    */
   function tataLetakMelingkar(graf) {
     const urut = menurutUrutan(graf);
@@ -147,7 +151,7 @@
     const pusat = MARGIN + radius;
     const posisi = new Map();
     urut.forEach((node, i) => {
-      const sudut = -Math.PI / 2 + (2 * Math.PI * i) / n;
+      const sudut = Math.PI + (2 * Math.PI * i) / n;
       posisi.set(node.id, {
         x: bulatkan(pusat + radius * Math.cos(sudut)),
         y: bulatkan(pusat + radius * Math.sin(sudut)),

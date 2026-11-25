@@ -102,14 +102,16 @@ test('berlapis: state tak terjangkau di kolom tersendiri paling kanan', () => {
   assert.ok(posisi.get('z').x > posisi.get('s').x);
 });
 
-test('melingkar: state awal di puncak, semua berjarak sama dari pusat', () => {
+test('melingkar: state awal paling kiri, searah jarum jam, semua berjarak sama dari pusat', () => {
   const dfa = dfaDari(['a', 'b', 'c', 'd', 'e'], 'a', [
     tr('a', 'a', 'b'), tr('b', 'a', 'c'), tr('c', 'a', 'd'), tr('d', 'a', 'e'), tr('e', 'a', 'a'),
   ]);
   const { posisi, lebar, tinggi } = hitungTataLetak(buatGraf(dfa), 'melingkar');
   const pusat = { x: lebar / 2, y: tinggi / 2 };
-  assert.equal(posisi.get('a').x, pusat.x);
-  assert.ok(posisi.get('a').y < pusat.y); // puncak
+  assert.equal(posisi.get('a').y, pusat.y);
+  assert.ok(posisi.get('a').x < pusat.x); // paling kiri (sumbu x negatif)
+  for (const id of ['b', 'c', 'd', 'e']) assert.ok(posisi.get('a').x < posisi.get(id).x);
+  assert.ok(posisi.get('b').y < pusat.y); // berikutnya naik ke atas (searah jarum jam)
   const jarak = (p) => Math.hypot(p.x - pusat.x, p.y - pusat.y);
   const j0 = jarak(posisi.get('a'));
   for (const id of ['b', 'c', 'd', 'e']) assert.ok(Math.abs(jarak(posisi.get(id)) - j0) < 0.1);
